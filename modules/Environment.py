@@ -23,13 +23,13 @@ class Bee(object):
         return self.x, self.y
 
 class Environment(object):
-    def __init__(self, min_x=-2, max_x=2, start_t=0, finish_t=0.5, num_bees=5):
+    def __init__(self, min_x=-2, max_x=2, start_t=0, finish_t=0.5, wind_x=0, wind_y=0, num_bees=225):
         self._setup_spatial_information(min_x, max_x)
         self._setup_temporal_information(start_t, finish_t)
         self._create_bees(num_bees)
 
-        self.wind_x = 0
-        self.wind_y = 0
+        self.wind_x = wind_x
+        self.wind_y = wind_y
 
         self.bias = 0
 
@@ -38,12 +38,14 @@ class Environment(object):
         self.X2 = np.arange(min_x, max_x+delta_x, delta_x)
         self.x_grid, self.y_grid = np.meshgrid(self.X1, self.X2)
 
-    def _setup_temporal_information(self, start_t, finish_t, delta_t=0.01):
+    def _setup_temporal_information(self, start_t, finish_t, delta_t=0.005):
         finish_t += delta_t
         self.t_array = np.arange(start_t, finish_t, delta_t)
 
     def _create_bees(self, num_bees, init_concentration=0.1, activation_threshold=0.005, diffusion_coefficient=0.5):
-        coords = [[-0.5, 0], [0.5, 0], [-0.5, 1], [-1, -0.5], [0.5, -0.5]]
+        # coords = [[-0.5, 0], [0.5, 0], [-0.5, 1], [-1, -0.5], [0.5, -0.5]]
+        vals = [0.5, 1, -0.5, -1]
+        coords = [[vals[np.random.randint(4)], vals[np.random.randint(4)]] for _ in range(num_bees)]
         queen_data = {
             "init_x"                : 0,
             "init_y"                : 0,
@@ -85,7 +87,6 @@ class Environment(object):
             concentration = np.zeros([len(self.x_grid), len(self.x_grid)])
             for bee_i, bee in enumerate(self.bees):
                 if bee.active:
-
                     bee_diffusion = bee.diffusion_coefficient
                     current_t = t - bee.concentration
                     bee_x, bee_y = bee.get_position(current_t)
@@ -93,7 +94,6 @@ class Environment(object):
                     term_2 = (self.x_grid - bee_x - self.wind_x * current_t)**2 + (self.y_grid - bee_y - self.wind_y * current_t)**2
                     current_c = term_1 * np.exp(-(term_2 / float(4 * bee_diffusion * current_t))) + self.bias
                     concentration += current_c
-
 
 
             for bee_i, bee in enumerate(self.bees):
@@ -115,9 +115,9 @@ class Environment(object):
 
             try:
                 sns.heatmap(concentration, cbar=False, cmap="magma", ax=ax)
-
+                plt.title("t: {}".format(t))
                 for bee in self.bees:
-                    if not bee.active:
+                    if not bee.active or not bee.type == "queen":
                         continue
                     bee_x, bee_y = bee.get_position(current_t)
                     try:
