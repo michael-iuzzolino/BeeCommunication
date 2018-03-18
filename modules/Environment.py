@@ -1,16 +1,19 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import seaborn as sns
 import pandas as pd
+
+
+import matplotlib.pyplot as plt
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 
 from modules.Bees import Swarm
 
 class Environment(object):
-    def __init__(self, bees, diffusion_coefficient, spatiotemporal_parameters):
+    def __init__(self, bees, diffusion_coefficient, spatiotemporal_parameters, plot_params):
         self._setup_spatial_information(**spatiotemporal_parameters["spatial"])
         self._setup_temporal_information(**spatiotemporal_parameters["temporal"])
         self.bees = bees
-
+        self.display_real_img = plot_params["display_real_img"]
 
         self.diffusion_coefficient = diffusion_coefficient
 
@@ -29,6 +32,23 @@ class Environment(object):
         self.information_plot = fig.add_subplot(grid[:5, 3:5])
         self.distance_plot = fig.add_subplot(grid[3:4, :3])
         self.concentration_history_plot = fig.add_subplot(grid[4:, 4:])
+
+    def imscatter(self, x, y, image, ax=None, zoom=1):
+        try:
+            image = plt.imread(image)
+        except TypeError:
+            # Likely already an array...
+            pass
+
+        im = OffsetImage(image, zoom=zoom)
+        x, y = np.atleast_1d(x, y)
+        artists = []
+        for x0, y0 in zip(x, y):
+            ab = AnnotationBbox(im, (x0, y0), xycoords='data', frameon=False)
+            artists.append(ax.add_artist(ab))
+        ax.update_datalim(np.column_stack([x, y]))
+        ax.autoscale()
+        return artists
 
     def _setup_spatial_information(self, min_x, max_x, delta_x):
         self.X1 = np.arange(min_x, max_x+delta_x, delta_x)
@@ -63,7 +83,10 @@ class Environment(object):
             bee_label = "Active" if bee.pheromone_active else "Inactive"
 
             # Plot position
-            self.concentration_map.scatter(x_i, y_i, s=bee_size, color=bee_color)
+            if self.display_real_img:
+                self.imscatter(x_i, y_i, bee.img, zoom=0.1, ax=self.concentration_map)
+            else:
+                self.concentration_map.scatter(x_i, y_i, s=bee_size, color=bee_color)
 
             # Bee annotate
             self.concentration_map.annotate(bee_name,

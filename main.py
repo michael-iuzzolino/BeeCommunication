@@ -42,7 +42,10 @@ def main():
     }
     swarm = Swarm(**swarm_parameters)
 
-    env = Environment(swarm.bees, diffusion_coefficient, spatiotemporal_parameters)
+    plot_params = {
+        "display_real_img" : True
+    }
+    env = Environment(swarm.bees, diffusion_coefficient, spatiotemporal_parameters, plot_params)
     env.run()
 
 if __name__ == '__main__':

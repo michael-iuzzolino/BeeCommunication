@@ -1,8 +1,16 @@
 import numpy as np
+import scipy
+from scipy import ndimage
+
+import matplotlib.pyplot as plt
 
 class Bee(object):
     def __init__(self, bee_type, init_position, pheromone_concentration, activation_threshold, movement, activity, bias, delta_t, delta_x, emission_period, queen_movement_params):
         self.type = bee_type
+
+        self.img = plt.imread('imgs/queen_bee.png') if bee_type == "queen" else plt.imread('imgs/worker_bee.png')
+        self.current_heading = 90
+
         self.x, self.y = init_position
         self.random_movement_active = activity["movement"]
         self.pheromone_active = activity["pheromone"]
@@ -59,6 +67,17 @@ class Bee(object):
                 self.x += self.directions_to_queen["x"]*self.delta_x*steps
                 self.y += self.directions_to_queen["y"]*self.delta_x*steps
 
+
+
+            # Rotate image!
+            try:
+                degree_to_queen = np.arctan2(self.bias_y, self.bias_x) * 180 / np.pi
+                degree_diff = self.current_heading - degree_to_queen
+                self.img = scipy.ndimage.rotate(self.img, degree_diff)
+                print("degree: {}".format(degree_diff))
+            except Exception as e:
+                print(e)
+
         # If random movement active, determine new movement behavior
         elif self.random_movement_active:
 
@@ -69,6 +88,8 @@ class Bee(object):
 
             # Update random movement direction
             self.__dict__[direction] += self.delta_x*sign*steps
+
+
 
     def sense_environment(self, concentration_map, x_i, y_i):
         # If they already found the queen, do nothing
