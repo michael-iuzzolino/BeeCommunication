@@ -37,8 +37,7 @@ def main():
             "worker"    : 2
         },
         "queen_movement_params"     : {
-            "pheromone_active"          : False,
-            "pheromone_attenuation"     : 1.0
+            "disable_pheromone" : True
         }
     }
     swarm = Swarm(**swarm_parameters)

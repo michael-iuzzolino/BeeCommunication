@@ -48,8 +48,8 @@ class Bee(object):
 
                 # Set queen movement parameters
                 # ========================================================================
-                self.pheromone_active = self.queen_movement_params["pheromone_active"]
-                self.concentration *= self.queen_movement_params["pheromone_attenuation"]
+                if self.queen_movement_params["disable_pheromone"]:
+                    self.pheromone_active = False
                 # ========================================================================
 
                 # Update position to head in direction of queen
@@ -80,7 +80,8 @@ class Bee(object):
                 self.found_queen_direction = True
 
         # look for queen
-        self.find_queen(concentration_map, x_i, y_i)
+        if not self.type == "queen":
+            self.find_queen(concentration_map, x_i, y_i)
 
         self.update()
 

@@ -38,7 +38,7 @@ class Environment(object):
         y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-4)[0])
         return x_i, y_i
 
-    def print_environment_map(self, concentration_map, timestep, init):
+    def display_environment_map(self, concentration_map, time_i, timestep, init):
         if init:
             self.vmax = np.max(concentration_map.flatten())
 
@@ -76,7 +76,7 @@ class Environment(object):
         for item in bee_distance_plot.get_xticklabels():
             item.set_rotation(45)
 
-        self.concentration_map.set_title("Timestep: {}".format(timestep))
+        self.concentration_map.set_title("Timestep {}: {}s".format(time_i, timestep))
 
         self.distance_plot.set(xlabel='Bees', ylabel='Distance to Queen')
 
@@ -128,7 +128,7 @@ class Environment(object):
 
         pheromone_emission_sources = []
 
-        for enironment_timestep_i, environment_timestep in enumerate(self.t_array):
+        for environment_timestep_i, environment_timestep in enumerate(self.t_array):
 
             # Iterate through each bee in the swarm to find emission sources
             for bee_i, bee in enumerate(self.bees):
@@ -170,9 +170,10 @@ class Environment(object):
             try:
                 plot_info = {
                     "concentration_map" : environment_concentration_map,
+                    "time_i"            : environment_timestep_i,
                     "timestep"          : environment_timestep,
-                    "init"              : enironment_timestep_i==0
+                    "init"              : environment_timestep_i==0
                 }
-                self.print_environment_map(**plot_info)
+                self.display_environment_map(**plot_info)
             except KeyboardInterrupt:
                 exit(0)
