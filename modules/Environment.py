@@ -19,6 +19,7 @@ class Environment(object):
 
     def _setup_plots(self):
         self.plot_bee = "worker_1"
+        self.full_event_keys = ""
 
         fig = plt.figure(figsize=(9, 7))
         self.fig = fig
@@ -138,10 +139,18 @@ class Environment(object):
     def run(self):
 
         def onpress(event):
-            valid_events = ['{}'.format(i+1) for i in range(10)]
-            if event.key in valid_events:
-                self.concentration_history_plot.cla()
-                self.plot_bee = "worker_{}".format(event.key)
+            valid_events = ['{}'.format(i) for i in range(10)]
+            if event.key in valid_events or event.key == 'enter':
+                if event.key == 'enter':
+                    if int(self.full_event_keys) > len(self.bees)-1:
+                        self.full_event_keys = ""
+                        print("Invalid Key Entry!")
+                        return
+                    self.concentration_history_plot.cla()
+                    self.plot_bee = "worker_{}".format(self.full_event_keys)
+                    self.full_event_keys = ""
+                else:
+                    self.full_event_keys += event.key
 
         self.fig.canvas.mpl_connect('key_press_event', onpress)
 
