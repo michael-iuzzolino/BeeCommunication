@@ -1,7 +1,7 @@
 import numpy as np
 
 class Bee(object):
-    def __init__(self, bee_type, init_position, pheromone_concentration, activation_threshold, movement, activity, bias, delta_t, delta_x):
+    def __init__(self, bee_type, init_position, pheromone_concentration, activation_threshold, movement, activity, bias, delta_t, delta_x, emission_period, queen_movement_params):
 
         self.type = bee_type
         self.x, self.y = init_position
@@ -16,13 +16,15 @@ class Bee(object):
         # Set queen finding behavior params
         self.queen_directed_movement = False
         self.found_queen = False
+        self.queen_movement_params = queen_movement_params
         self.found_queen_direction = False
-        self.wait_threshold = 4 # wait 4 timesteps after finding the queen before moving
+        self.wait_threshold = int(np.random.normal(10, 1)) # wait X timesteps after finding the queen before moving
         self.num_timesteps_waited = 0
 
         # Bias is directed pheromone emission
         self.bias_x, self.bias_y = bias
 
+        self.emission_period = emission_period
         self.pheromone_emission_timestep = 1
 
         # Spatiotemporal intervals
@@ -44,6 +46,12 @@ class Bee(object):
                 # Waited long enough; Enable movement toward queen
                 self.queen_directed_movement = True
 
+                # Set queen movement parameters
+                # ========================================================================
+                self.pheromone_active = self.queen_movement_params["pheromone_active"]
+                self.concentration *= self.queen_movement_params["pheromone_attenuation"]
+                # ========================================================================
+
                 # Update position to head in direction of queen
                 steps = np.random.randint(1, 6)
                 self.x += self.directions_to_queen["x"]*self.delta_x*steps
@@ -61,28 +69,31 @@ class Bee(object):
             self.__dict__[direction] += self.delta_x*sign*steps
 
     def sense_environment(self, concentration_map, x_i, y_i):
+        # If they already found the queen, do nothing
         if self.found_queen:
             return
-            
+
         # Check if worker will be activated
         if not self.pheromone_active:
             if concentration_map[x_i, y_i] >= self.activation_threshold:
                 self.activate_pheromones()
-                self.find_queen(concentration_map, x_i, y_i)
+                self.found_queen_direction = True
 
-        # look for queen, if appropriate
-        if self.queen_directed_movement:
-            self.find_queen(concentration_map, x_i, y_i)
+        # look for queen
+        self.find_queen(concentration_map, x_i, y_i)
 
         self.update()
 
     def measure(self):
+        emitting = True if self.pheromone_emission_timestep % self.emission_period == 1 else False
+
         bee_info = {
             "x"             : self.x,
             "y"             : self.y,
             "bias_x"        : self.bias_x,
             "bias_y"        : self.bias_y,
-            "emission_t"    : self.pheromone_emission_timestep * self.delta_t
+            "concentration" : self.concentration,
+            "emitting"      : emitting
         }
         return bee_info
 
@@ -100,7 +111,7 @@ class Bee(object):
             max_indices = [int(i)-1 for i in max_index]
 
             self.directions_to_queen = { "x" : max_indices[0], "y": max_indices[1] }
-            self.found_queen_direction = True
+
 
             # Update bias
             bias_x = -1 if self.directions_to_queen["x"] > 0 else 1
@@ -110,12 +121,13 @@ class Bee(object):
 
             self.bias_x = bias_x / float(norm)
             self.bias_y = bias_y / float(norm)
+
         except ValueError:
             self.found_queen = True
             self.queen_directed_movement = False
 
 class Swarm(object):
-    def __init__(self, num_workers, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold, delta_t, delta_x):
+    def __init__(self, num_workers, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold, delta_t, delta_x, emission_periods, queen_movement_params):
 
         queen_data = {
             "init_position"             : (0, 0),
@@ -126,7 +138,9 @@ class Swarm(object):
                 "pheromone" : True
             },
             "movement"                  : (0.0, 0.0),
-            "bias"                      : (0, 0)
+            "bias"                      : (0, 0),
+            "emission_period"           : emission_periods["queen"],
+            "queen_movement_params"     : queen_movement_params
         }
 
         bees = {"queen" : queen_data}
@@ -149,7 +163,9 @@ class Swarm(object):
                 "pheromone" : False
             },
             "movement"                  : (0.001, 0.001),
-            "bias"                      : temp_bias
+            "bias"                      : temp_bias,
+            "emission_period"           : emission_periods["worker"],
+            "queen_movement_params"     : queen_movement_params
         }
 
         worker_bees = {"worker_{}".format(i+1) : get_worker_data(i) for i in range(num_workers)}

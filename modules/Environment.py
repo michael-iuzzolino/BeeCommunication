@@ -23,21 +23,19 @@ class Environment(object):
         self.information_plot = fig.add_subplot(grid[:, 3:])
         self.distance_plot = fig.add_subplot(grid[3:4, :3])
 
-
-
     def _setup_spatial_information(self, min_x, max_x, delta_x):
         self.X1 = np.arange(min_x, max_x+delta_x, delta_x)
         self.X2 = np.arange(min_x, max_x+delta_x, delta_x)
         self.x_grid, self.y_grid = np.meshgrid(self.X1, self.X2)
 
     def _setup_temporal_information(self, start_t, finish_t, delta_t):
+        self.delta_t = delta_t
         self.t_array = np.arange(start_t, finish_t+delta_t, delta_t)
         self.t_array = self.t_array[1:]
 
     def _get_global_position(self, bee_info):
         x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-4)[0])
         y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-4)[0])
-
         return x_i, y_i
 
     def print_environment_map(self, concentration_map, timestep, init):
@@ -78,7 +76,10 @@ class Environment(object):
         for item in bee_distance_plot.get_xticklabels():
             item.set_rotation(45)
 
-        self.concentration_map.set_title("timestep: {}".format(timestep))
+        self.concentration_map.set_title("Timestep: {}".format(timestep))
+
+        self.distance_plot.set(xlabel='Bees', ylabel='Distance to Queen')
+
         plt.pause(0.005)
         self.concentration_map.cla()
         self.information_plot.cla()
@@ -104,40 +105,63 @@ class Environment(object):
 
         self.bee_distance_df = pd.DataFrame({"bees" : bee_names, "bee_distances" : bee_distances})
 
+    def _update_concentration_map(self, pheromone_emission_sources, current_timestep):
+
+        # Instantiate concentration map as all 0's for current timestep
+        environment_concentration_map = np.zeros([len(self.x_grid), len(self.x_grid)])
+
+        for emission_source in pheromone_emission_sources:
+            delta_t = current_timestep - emission_source["init_t"] + self.delta_t   #self.delta_t required to initialize
+            term_1 = emission_source["concentration"] / np.sqrt(delta_t + 1e-9)
+            term_2 = (self.x_grid - emission_source["x"] - emission_source["bias_x"] * delta_t)**2 + (self.y_grid - emission_source["y"] - emission_source["bias_y"] * delta_t)**2
+            term_3 = 4 * self.diffusion_coefficient * delta_t + 1e-9
+
+            # Calculate current bee's concentration map
+            emission_source_map = term_1 * np.exp(-(term_2 / float(term_3)))
+
+            # Update concentration map
+            environment_concentration_map += emission_source_map
+
+        return environment_concentration_map
+
     def run(self):
+
+        pheromone_emission_sources = []
 
         for enironment_timestep_i, environment_timestep in enumerate(self.t_array):
 
-            # Instantiate concentration map as all 0's for current timestep
-            environment_concentration_map = np.zeros([len(self.x_grid), len(self.x_grid)])
-
-            # Iterate through each bee in the swarm
-            global_bee_positions = {}
+            # Iterate through each bee in the swarm to find emission sources
             for bee_i, bee in enumerate(self.bees):
 
-                # Measure the bee's information
+                # Measure the bee
                 bee_info = bee.measure()
 
                 # If bee pheromone is active, update concentration map
                 if bee.pheromone_active:
-                    term_1 = bee.concentration / np.sqrt(bee_info["emission_t"] + 1e-9)
-                    term_2 = (self.x_grid - bee_info["x"] - bee_info["bias_x"] * bee_info["emission_t"])**2 + (self.y_grid - bee_info["y"] - bee_info["bias_y"] * bee_info["emission_t"])**2
-                    term_3 = 4 * self.diffusion_coefficient * bee_info["emission_t"] + 1e-9
 
-                    # Calculate current bee's concentration map
-                    bee_i_concentration_map = term_1 * np.exp(-(term_2 / float(term_3)))
+                    # Check if bee is emitting
+                    if bee_info["emitting"]:
+                        bee_info["init_t"] = environment_timestep
 
-                    # Update concentration map
-                    environment_concentration_map += bee_i_concentration_map
+                        # Add emission to sources
+                        pheromone_emission_sources.append(bee_info)
+
+            # Update environment_concentration_map
+            environment_concentration_map = self._update_concentration_map(pheromone_emission_sources, environment_timestep)
+
+            global_bee_positions = {}
+            for bee_i, bee in enumerate(self.bees):
+                # Measure the bee's information
+                bee_info = bee.measure()
 
                 # Get the bee's global position info
                 x_i, y_i = self._get_global_position(bee_info)
 
-                # Let the bee sense their environment
-                bee.sense_environment(environment_concentration_map, x_i, y_i)
-
                 # Update global bee positions
                 global_bee_positions[bee.type] = {"x" : x_i, "y" : y_i}
+
+                # Let the bee sense their environment
+                bee.sense_environment(environment_concentration_map, x_i, y_i)
 
             # Calculate distances to queen
             self._get_distances_to_queen(global_bee_positions)

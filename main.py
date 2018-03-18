@@ -10,7 +10,7 @@ def main():
     delta_t = 0.05
     delta_x = 0.005
     diffusion_coefficient = 0.2
-    num_workers = 8
+    num_workers = 10
 
     spatiotemporal_parameters = {
         "spatial"   : {
@@ -20,18 +20,26 @@ def main():
         },
         "temporal"  : {
             "start_t"   : 0,
-            "finish_t"  : 5.0,
+            "finish_t"  : 10.0,
             "delta_t"   : delta_t
         }
     }
 
     swarm_parameters = {
-        "queen_bee_concentration"   : 0.1,
-        "worker_bee_concentration"  : 0.05,
+        "queen_bee_concentration"   : 0.05,
+        "worker_bee_concentration"  : 0.01,
         "worker_bee_threshold"      : 0.05,
         "num_workers"               : num_workers,
         "delta_t"                   : delta_t,
         "delta_x"                   : delta_x,
+        "emission_periods"          : {
+            "queen"     : 15,
+            "worker"    : 2
+        },
+        "queen_movement_params"     : {
+            "pheromone_active"          : False,
+            "pheromone_attenuation"     : 1.0
+        }
     }
     swarm = Swarm(**swarm_parameters)
 
