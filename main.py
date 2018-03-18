@@ -32,10 +32,6 @@ def main():
         "num_workers"               : num_workers,
         "delta_t"                   : delta_t,
         "delta_x"                   : delta_x,
-        "emission_invervals"        : {
-            "queen"     : 100,
-            "worker"    : 100
-        }
     }
     swarm = Swarm(**swarm_parameters)
 
