@@ -2,7 +2,6 @@ import numpy as np
 
 class Bee(object):
     def __init__(self, bee_type, init_position, pheromone_concentration, activation_threshold, movement, activity, bias, delta_t, delta_x, emission_period, queen_movement_params):
-
         self.type = bee_type
         self.x, self.y = init_position
         self.random_movement_active = activity["movement"]
@@ -30,6 +29,9 @@ class Bee(object):
         # Spatiotemporal intervals
         self.delta_t = delta_t
         self.delta_x = delta_x
+
+        # History information
+        self.concentration_history = []
 
     def update(self):
 
@@ -107,21 +109,31 @@ class Bee(object):
         local_map = concentration_map[x_i-1:x_i+2, y_i-1:y_i+2]
 
         try:
-            max_c = np.max(local_map[np.where(local_map > current_c)])
-            max_index = list(np.where(local_map == max_c))
-            max_indices = [int(i)-1 for i in max_index]
+            # Get the max concentration in the local map
+            max_concentration = np.max(local_map[np.where(local_map > current_c)])
 
-            self.directions_to_queen = { "x" : max_indices[0], "y": max_indices[1] }
+            # Append max concentration to history
+            self.concentration_history.append(max_concentration)
 
+            # Get the indicies of the max concentration
+            max_concentration_indices = list(np.where(local_map == max_concentration))
+
+            # Adjust the indicies to be within [-1, 1] rather than in [0, 2]
+            adjusted_indices = [int(i)-1 for i in max_concentration_indices]
+
+            # Assign directions to queen
+            self.directions_to_queen = { "x" : adjusted_indices[0], "y": adjusted_indices[1] }
 
             # Update bias
-            bias_x = -1 if self.directions_to_queen["x"] > 0 else 1
-            bias_y = -1 if self.directions_to_queen["y"] > 0 else 1
+            bias_direction_x = -1 if self.directions_to_queen["x"] > 0 else 1
+            bias_direction_y = -1 if self.directions_to_queen["y"] > 0 else 1
 
-            norm = np.sqrt(bias_x**2 + bias_y**2) + 1e-9
+            # Vector norm
+            norm = np.sqrt(bias_direction_x**2 + bias_direction_y**2) + 1e-9
 
-            self.bias_x = bias_x / float(norm)
-            self.bias_y = bias_y / float(norm)
+            # Update bias
+            self.bias_x = bias_direction_x / float(norm)
+            self.bias_y = bias_direction_y / float(norm)
 
         except ValueError:
             self.found_queen = True

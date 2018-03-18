@@ -34,7 +34,7 @@ def main():
         "delta_x"                   : delta_x,
         "emission_periods"          : {
             "queen"     : 15,
-            "worker"    : 2
+            "worker"    : 4
         },
         "queen_movement_params"     : {
             "disable_pheromone" : True

@@ -11,17 +11,23 @@ class Environment(object):
         self._setup_temporal_information(**spatiotemporal_parameters["temporal"])
         self.bees = bees
 
+
         self.diffusion_coefficient = diffusion_coefficient
 
         # Instantiate environment plot figure
         self._setup_plots()
 
     def _setup_plots(self):
+        self.plot_bee = "worker_1"
+
         fig = plt.figure(figsize=(9, 7))
+        self.fig = fig
+
         grid = plt.GridSpec(5, 5, wspace=0.4, hspace=0.3)
         self.concentration_map = fig.add_subplot(grid[0:3, 0:3])
-        self.information_plot = fig.add_subplot(grid[:, 3:])
+        self.information_plot = fig.add_subplot(grid[:5, 3:5])
         self.distance_plot = fig.add_subplot(grid[3:4, :3])
+        self.concentration_history_plot = fig.add_subplot(grid[4:, 4:])
 
     def _setup_spatial_information(self, min_x, max_x, delta_x):
         self.X1 = np.arange(min_x, max_x+delta_x, delta_x)
@@ -69,6 +75,11 @@ class Environment(object):
             self.information_plot.text(0.1, bee_i*-0.05+0.9, bee_string, color=bee_color, size=10)
             self.information_plot.set_xticks([])
             self.information_plot.set_yticks([])
+
+            if bee.type == self.plot_bee:
+                self.concentration_history_plot.plot(bee.concentration_history, 'cyan')
+                self.concentration_history_plot.set_title("{}".format(bee_name))
+                self.concentration_history_plot.set(xlabel='Timesteps', ylabel='Pheromone \nConcentration')
 
 
         # Plot
@@ -125,6 +136,14 @@ class Environment(object):
         return environment_concentration_map
 
     def run(self):
+
+        def onpress(event):
+            valid_events = ['{}'.format(i+1) for i in range(10)]
+            if event.key in valid_events:
+                self.concentration_history_plot.cla()
+                self.plot_bee = "worker_{}".format(event.key)
+
+        self.fig.canvas.mpl_connect('key_press_event', onpress)
 
         pheromone_emission_sources = []
 
