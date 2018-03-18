@@ -2,136 +2,111 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 
-class Bee(object):
-    def __init__(self, init_x, init_y, init_concentration, activation_threshold, diffusion_coefficient, dx=0, dy=0, bee_type="worker", init_active=False):
-        self.x = init_x
-        self.y = init_y
-        self.type = bee_type
-        self.active = init_active
-        self.concentration = init_concentration
-        self.init_concentration = init_concentration
-        self.diffusion_coefficient = diffusion_coefficient
-        self.activation_threshold = activation_threshold
-
-        self.dx = dx
-        self.dy = dy
-
-    def get_position(self, t):
-        self.x += self.dx * t
-        self.y += self.dy * t
-
-        return self.x, self.y
+from modules.Bees import Swarm
 
 class Environment(object):
-    def __init__(self, min_x=-2, max_x=2, start_t=0, finish_t=0.5, wind_x=0, wind_y=0, num_bees=225):
-        self._setup_spatial_information(min_x, max_x)
-        self._setup_temporal_information(start_t, finish_t)
-        self._create_bees(num_bees)
+    def __init__(self, bees, diffusion_coefficient, spatiotemporal_parameters):
+        self._setup_spatial_information(**spatiotemporal_parameters["spatial"])
+        self._setup_temporal_information(**spatiotemporal_parameters["temporal"])
+        self.bees = bees
 
-        self.wind_x = wind_x
-        self.wind_y = wind_y
+        self.diffusion_coefficient = diffusion_coefficient
 
-        self.bias = 0
-
-    def _setup_spatial_information(self, min_x, max_x, delta_x=0.005):
+    def _setup_spatial_information(self, min_x, max_x, delta_x):
         self.X1 = np.arange(min_x, max_x+delta_x, delta_x)
         self.X2 = np.arange(min_x, max_x+delta_x, delta_x)
         self.x_grid, self.y_grid = np.meshgrid(self.X1, self.X2)
 
-    def _setup_temporal_information(self, start_t, finish_t, delta_t=0.005):
-        finish_t += delta_t
-        self.t_array = np.arange(start_t, finish_t, delta_t)
-
-    def _create_bees(self, num_bees, init_concentration=0.1, activation_threshold=0.005, diffusion_coefficient=0.5):
-        # coords = [[-0.5, 0], [0.5, 0], [-0.5, 1], [-1, -0.5], [0.5, -0.5]]
-        vals = [0.5, 1, -0.5, -1]
-        coords = [[vals[np.random.randint(4)], vals[np.random.randint(4)]] for _ in range(num_bees)]
-        queen_data = {
-            "init_x"                : 0,
-            "init_y"                : 0,
-            "init_concentration"    : init_concentration,
-            "activation_threshold"  : activation_threshold,
-            "diffusion_coefficient" : diffusion_coefficient,
-            "init_active"           : True,
-            "dx"                    : 0.8,
-            "dy"                    : 0.8
-        }
-
-        bees = {"queen" : queen_data}
-
-        get_worker_data = lambda bee_i : {
-            "init_x"                : coords[bee_i][0],
-            "init_y"                : coords[bee_i][1],
-            "init_concentration"    : init_concentration,
-            "activation_threshold"  : activation_threshold,
-            "diffusion_coefficient" : diffusion_coefficient,
-            "init_active"           : False,
-            "dx"                    : np.random.uniform()*2 - 1,
-            "dy"                    : np.random.uniform()*2 - 1
-        }
-
-        worker_bees = {"worker_{}".format(i+1) : get_worker_data(i) for i in range(num_bees)}
-
-        for worker_bee, worker_bee_info in worker_bees.items():
-            bees[worker_bee] = worker_bee_info
-
-        self.bees = []
-        for bee, bee_info in bees.items():
-            bee_info["bee_type"] = bee
-            self.bees.append(Bee(**bee_info))
+    def _setup_temporal_information(self, start_t, finish_t, delta_t):
+        self.t_array = np.arange(start_t, finish_t+delta_t, delta_t)
+        self.t_array = self.t_array[1:]
 
     def run(self):
-
         fig, ax = plt.subplots(1, 1)
-        for t_i, t in enumerate(self.t_array, 1):
-            concentration = np.zeros([len(self.x_grid), len(self.x_grid)])
+
+        for enironment_timestep_i, environment_timestep in enumerate(self.t_array):
+            print("t_i: {}, {}".format(enironment_timestep_i, environment_timestep))
+            environment_concentration_map = np.zeros([len(self.x_grid), len(self.x_grid)])
             for bee_i, bee in enumerate(self.bees):
-                if bee.active:
-                    bee_diffusion = bee.diffusion_coefficient
-                    current_t = t - bee.concentration
-                    bee_x, bee_y = bee.get_position(current_t)
-                    term_1 = bee.init_concentration / np.sqrt(current_t)
-                    term_2 = (self.x_grid - bee_x - self.wind_x * current_t)**2 + (self.y_grid - bee_y - self.wind_y * current_t)**2
-                    current_c = term_1 * np.exp(-(term_2 / float(4 * bee_diffusion * current_t))) + self.bias
-                    concentration += current_c
+                # Update bee's movement and pheromone emission
+
+                bee.update()
+
+                if bee.pheromone_active:
+                    bee_info = bee.measure()
+                    term_1 = bee.concentration / np.sqrt(bee_info["emission_t"] + 1e-9)
+                    term_2 = (self.x_grid - bee_info["x"] - bee_info["bias_x"] * bee_info["emission_t"])**2 + (self.y_grid - bee_info["y"] - bee_info["bias_y"] * bee_info["emission_t"])**2
+                    current_c = term_1 * np.exp(-(term_2 / float(4 * self.diffusion_coefficient * bee_info["emission_t"])))
+                    environment_concentration_map += current_c
+
+            for bee_i, bee in enumerate(self.bees):
+                bee_info = bee.measure()
+                try:
+                    x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-4)[0])
+                    y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-4)[0])
+                    bee.sense_environment(environment_concentration_map, x_i, y_i)
+                except:
+                    pass
 
 
             for bee_i, bee in enumerate(self.bees):
-                if not bee.active:
-                    current_t = t - bee.concentration
-                    bee_x, bee_y = bee.get_position(current_t)
-                    test = np.abs(self.X1 - bee_x)
+                if not bee.pheromone_active:
+                    bee_info = bee.measure()
 
                     try:
-                        x_i = int(np.where(np.abs(self.X1 - bee_x) < 1e-4)[0])
-                        y_i = int(np.where(np.abs(self.X2 - bee_y) < 1e-4)[0])
+                        x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-4)[0])
+                        y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-4)[0])
 
-                        if concentration[y_i, x_i] >= bee.activation_threshold:
-                            bee.active = True
+
+                        # NOTE: WORKER BEE ACTIVATED HERE
+                        if environment_concentration_map[y_i, x_i] >= bee.activation_threshold:
+                            print("{} Bee movement stopped. Pheromone starting.".format(bee.type))
+                            bee.find_queen(environment_concentration_map, x_i, y_i)
+                            bee.pheromone_active = True
+                            bee.movement_active = False
                             bee.concentration = t
-
                     except:
                         pass
 
             try:
-                sns.heatmap(concentration, cbar=False, cmap="magma", ax=ax)
-                plt.title("t: {}".format(t))
-                for bee in self.bees:
-                    if not bee.active or not bee.type == "queen":
-                        continue
-                    bee_x, bee_y = bee.get_position(current_t)
-                    try:
-                        x_i = int(np.where(np.abs(self.X1 - bee_x) < 1e-4)[0])
-                        y_i = int(np.where(np.abs(self.X2 - bee_y) < 1e-4)[0])
-                        ax.annotate(bee.type,
-                            color='red',
-                            xy=(x_i, y_i),
-                            xytext=(x_i-80, y_i+125),
-                            arrowprops=dict(facecolor='red', shrink=0.05),
-                        )
-                    except:
-                        pass
+                print(environment_concentration_map.flatten())
+                MIN = np.min(environment_concentration_map.flatten())
+                MAX = np.max(environment_concentration_map.flatten())
+                print("MIN {}, MAX {}".format(MIN, MAX))
+                sns.heatmap(environment_concentration_map, cbar=False, cmap="magma", ax=ax, vmin=0, vmax=0.5)
+                plt.title("t: {}".format(environment_timestep))
+                for bee_i, bee in enumerate(self.bees):
+                    # if not bee.active or not bee.type == "queen":
+                    #     continue
+                    bee_info = bee.measure()
+
+                    x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-4)[0])
+                    y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-4)[0])
+                    bee_color = "green" if bee.movement_active else "red"
+                    bee_size = 30 if bee.movement_active else 20
+                    arrow_shrink = 0.05 if bee.movement_active else 0.005
+                    bee_name = bee.type.replace("_", " ").capitalize()
+                    bee_label = "{} Active".format(bee_name) if bee.pheromone_active else "{} Inactive".format(bee_name)
+                    ax.scatter(x_i, y_i, s=bee_size, color=bee_color)
+
+                    # Bee annotate
+                    ax.annotate(bee_name,
+                        color=bee_color,
+                        xy=(x_i, y_i),
+                        xytext=(x_i, y_i)
+                    )
+
+                    # Bee legend annotate
+                    ax.annotate("{}. {}".format(bee_i+1, bee_label),
+                        color=bee_color,
+                        xy=(50, 100),
+                        xytext=(50, bee_i*40 +40),
+                        # arrowprops=dict(facecolor=bee_color, shrink=arrow_shrink),
+                    )
                 plt.pause(0.005)
                 plt.cla()
-            except:
-                pass
+            except KeyboardInterrupt:
+                exit(0)
+            # except Exception as e:
+            #     print("ERROR LINE 80")
+            #     print(e)
