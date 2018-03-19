@@ -1,3 +1,4 @@
+import json
 import numpy as np
 import seaborn as sns
 import pandas as pd
@@ -9,18 +10,22 @@ from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from modules.Bees import Swarm
 
 class Environment(object):
-    def __init__(self, bees, diffusion_coefficient, spatiotemporal_parameters, plot_params):
+    def __init__(self, bees, diffusion_coefficient, spatiotemporal_parameters, plot_params, data_dir_path):
         self._setup_spatial_information(**spatiotemporal_parameters["spatial"])
         self._setup_temporal_information(**spatiotemporal_parameters["temporal"])
         self.bees = bees
         self.display_real_img = plot_params["display_real_img"]
 
         self.diffusion_coefficient = diffusion_coefficient
+        self.data_dir_path = data_dir_path
 
         # Instantiate environment plot figure
-        self._setup_plots()
+        self._setup_plots(plot_params)
 
-    def _setup_plots(self):
+    def _setup_plots(self, plot_params):
+        self.show_plot = True
+
+        self.plot_save_dir = plot_params['save_dir']
         self.plot_bee = "worker_1"
         self.full_event_keys = ""
 
@@ -54,6 +59,10 @@ class Environment(object):
         self.X1 = np.arange(min_x, max_x+delta_x, delta_x)
         self.X2 = np.arange(min_x, max_x+delta_x, delta_x)
         self.x_grid, self.y_grid = np.meshgrid(self.X1, self.X2)
+
+        # Get maximum distance
+        max_distance = np.sqrt(((min_x - max_x)/2.0)**2 + ((min_x - max_x)/2.0)**2)
+        self.max_distance_from_center = max_distance
 
     def _setup_temporal_information(self, start_t, finish_t, delta_t):
         self.delta_t = delta_t
@@ -107,7 +116,9 @@ class Environment(object):
 
 
         # Plot
+
         bee_distance_plot = sns.barplot(x="bees", y="bee_distances", data=self.bee_distance_df, color="salmon", ax=self.distance_plot)
+        self.distance_plot.set_ylim(0,self.max_distance_from_center)
         for item in bee_distance_plot.get_xticklabels():
             item.set_rotation(45)
 
@@ -115,7 +126,11 @@ class Environment(object):
 
         self.distance_plot.set(xlabel='Bees', ylabel='Distance to Queen')
 
-        plt.pause(0.005)
+        plt.savefig("{}/environment_timestep_{}".format(self.plot_save_dir, time_i))
+
+        if self.show_plot:
+            plt.pause(0.005)
+
         self.concentration_map.cla()
         self.information_plot.cla()
         self.distance_plot.cla()
@@ -158,6 +173,14 @@ class Environment(object):
             environment_concentration_map += emission_source_map
 
         return environment_concentration_map
+
+    def _save_data(self):
+        full_bee_data = {}
+        for bee_i, bee in enumerate(self.bees):
+            full_bee_data[bee.type] = list(bee.concentration_history)
+
+        with open("{}/bee_concentration_history.json".format(self.data_dir_path), "w") as outfile:
+            json.dump(full_bee_data, outfile)
 
     def run(self):
 
@@ -209,13 +232,18 @@ class Environment(object):
                 x_i, y_i = self._get_global_position(bee_info)
 
                 # Update global bee positions
-                global_bee_positions[bee.type] = {"x" : x_i, "y" : y_i}
+                global_bee_positions[bee.type] = {"x" : bee_info["x"], "y" : bee_info["y"]}
 
                 # Let the bee sense their environment
                 bee.sense_environment(environment_concentration_map, x_i, y_i)
 
             # Calculate distances to queen
             self._get_distances_to_queen(global_bee_positions)
+
+            # Save data
+            # ------------------------------------------------------------
+            self._save_data()
+            # ------------------------------------------------------------
 
             # Plot the environment
             try:
