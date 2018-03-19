@@ -23,7 +23,7 @@ class Environment(object):
         self._setup_plots(plot_params)
 
     def _setup_plots(self, plot_params):
-        self.show_plot = True
+        self.show_plot = False
 
         self.plot_save_dir = plot_params['save_dir']
         self.plot_bee = "worker_1"
@@ -70,8 +70,8 @@ class Environment(object):
         self.t_array = self.t_array[1:]
 
     def _get_global_position(self, bee_info):
-        x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-4)[0])
-        y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-4)[0])
+        x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-5)[0])
+        y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-5)[0])
         return x_i, y_i
 
     def display_environment_map(self, concentration_map, time_i, timestep, init):

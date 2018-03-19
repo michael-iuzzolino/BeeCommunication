@@ -1,3 +1,6 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import os
 import datetime
 import json
@@ -7,6 +10,7 @@ from modules.Environment import Environment
 from modules.Bees import Swarm
 
 RANDOM_SEED = 42
+TESTING = False
 
 def make_directories(experiment_dir, experiment_i, num_worker_bees):
     # Experiment directory
@@ -51,6 +55,8 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
         "num_workers"               : worker_bee_params["number"],
         "delta_t"                   : spatiotemporal_parameters["temporal"]["delta_t"],
         "delta_x"                   : spatiotemporal_parameters["spatial"]["delta_x"],
+        "min_x"                     : spatiotemporal_parameters["spatial"]["min_x"],
+        "max_x"                     : spatiotemporal_parameters["spatial"]["max_x"],
         "emission_periods"          : {
             "queen"     : queen_bee_params["emission_period"],
             "worker"    : worker_bee_params["emission_period"]
@@ -83,7 +89,7 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
     env = Environment(swarm.bees, diffusion_coefficient, spatiotemporal_parameters, plot_params, data_dir_path)
     env.run()
 
-def main(TESTING=True):
+def main():
 
     num_workers = 10
     diffusion_coefficient = 0.25
@@ -145,6 +151,7 @@ def main(TESTING=True):
         for queen_bee_concentration in queen_bee_concentrations:
             for worker_bee_concentration in worker_bee_concentrations:
                 for worker_bee_threshold in worker_bee_thresholds:
+                    print("Experiment {} --- Queen Concentration: {} -- Worker Concentration: {} -- Threshold: {}".format(experiment_i, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold))
                     queen_bee_params = {
                         "concentration"     : queen_bee_concentration,
                         "emission_period"   : queen_emission_period

@@ -1,3 +1,6 @@
+import warnings
+warnings.simplefilter(action='ignore', category=FutureWarning)
+
 import numpy as np
 import scipy
 from scipy import ndimage
@@ -5,10 +8,10 @@ from scipy import ndimage
 import matplotlib.pyplot as plt
 
 class Bee(object):
-    def __init__(self, bee_type, init_position, pheromone_concentration, activation_threshold, movement, activity, bias, delta_t, delta_x, emission_period, queen_movement_params, plot_dir):
+    def __init__(self, bee_type, init_position, pheromone_concentration, activation_threshold, movement, activity, bias, delta_t, delta_x, min_x, max_x, emission_period, queen_movement_params, plot_dir):
         self.type = bee_type
 
-        self.img = plt.imread('imgs/queen_bee.png') if bee_type == "queen" else plt.imread('imgs/worker_bee.png')
+        self.img = ndimage.imread('imgs/queen_bee.png') if bee_type == "queen" else ndimage.imread('imgs/worker_bee.png')
         self.current_heading = 90
 
         self.x, self.y = init_position
@@ -37,6 +40,8 @@ class Bee(object):
         # Spatiotemporal intervals
         self.delta_t = delta_t
         self.delta_x = delta_x
+        self.min_x = min_x
+        self.max_x = max_x
 
         # History information
         self.plot_dir = plot_dir
@@ -88,7 +93,8 @@ class Bee(object):
             # Update random movement direction
             self.__dict__[direction] += self.delta_x*sign*steps
 
-
+            # Constrain movement to board
+            self.__dict__[direction] = np.min([self.min_x, np.max([self.__dict__[direction], self.max_x])])
 
     def sense_environment(self, concentration_map, x_i, y_i):
         # If they already found the queen, do nothing
@@ -160,7 +166,7 @@ class Bee(object):
             self.queen_directed_movement = False
 
 class Swarm(object):
-    def __init__(self, num_workers, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold, delta_t, delta_x, emission_periods, queen_movement_params, worker_plot_dir):
+    def __init__(self, num_workers, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold, delta_t, delta_x, min_x, max_x, emission_periods, queen_movement_params, worker_plot_dir):
 
         queen_data = {
             "init_position"             : (0, 0),
@@ -213,4 +219,7 @@ class Swarm(object):
             bee_info["bee_type"] = bee
             bee_info["delta_t"] = delta_t
             bee_info["delta_x"] = delta_x
+            bee_info["min_x"] = min_x
+            bee_info["max_x"] = max_x
+
             self.bees.append(Bee(**bee_info))
