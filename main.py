@@ -10,7 +10,9 @@ from modules.Environment import Environment
 from modules.Bees import Swarm
 
 RANDOM_SEED = 42
-TESTING = False
+TESTING = True
+REAL_TIME_VISUALIZATION = True
+ROTATE_BEES_ON = False
 
 def make_directories(experiment_dir, experiment_i, num_worker_bees):
     # Experiment directory
@@ -64,7 +66,8 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
         "queen_movement_params"     : {
             "disable_pheromone" : worker_bee_params["disable_pheromone"]
         },
-        "worker_plot_dir"           : plots_dir_path
+        "worker_plot_dir"           : plots_dir_path,
+        "rotate_bees_ON"            : ROTATE_BEES_ON
     }
 
 
@@ -86,11 +89,10 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
     # ---------------------------------------------------------------------------
 
     swarm = Swarm(**swarm_parameters)
-    env = Environment(swarm.bees, diffusion_coefficient, spatiotemporal_parameters, plot_params, data_dir_path)
+    env = Environment(swarm.bees, diffusion_coefficient, spatiotemporal_parameters, plot_params, data_dir_path, REAL_TIME_VISUALIZATION)
     env.run()
 
 def main():
-
     num_workers = 10
     diffusion_coefficient = 0.25
     queen_emission_period = 15
@@ -113,7 +115,6 @@ def main():
     queen_bee_concentrations = [0.01*(i+1) for i in range(10)]
     worker_bee_concentrations = [0.005*(i+1) for i in range(10)]
     worker_bee_thresholds = [0.005*(i+1) for i in range(10)]
-
 
     # Create directory for current experiment
     # -----------------------------------------------------------------------------

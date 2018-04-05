@@ -6,15 +6,17 @@ import pandas as pd
 
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib.colors import ListedColormap
 
 from modules.Bees import Swarm
 
 class Environment(object):
-    def __init__(self, bees, diffusion_coefficient, spatiotemporal_parameters, plot_params, data_dir_path):
+    def __init__(self, bees, diffusion_coefficient, spatiotemporal_parameters, plot_params, data_dir_path, real_time_visualization):
         self._setup_spatial_information(**spatiotemporal_parameters["spatial"])
         self._setup_temporal_information(**spatiotemporal_parameters["temporal"])
         self.bees = bees
         self.display_real_img = plot_params["display_real_img"]
+        self.real_time_visualization = real_time_visualization
 
         self.diffusion_coefficient = diffusion_coefficient
         self.data_dir_path = data_dir_path
@@ -23,8 +25,6 @@ class Environment(object):
         self._setup_plots(plot_params)
 
     def _setup_plots(self, plot_params):
-        self.show_plot = False
-
         self.plot_save_dir = plot_params['save_dir']
         self.plot_bee = "worker_1"
         self.full_event_keys = ""
@@ -37,6 +37,11 @@ class Environment(object):
         self.information_plot = fig.add_subplot(grid[:5, 3:5])
         self.distance_plot = fig.add_subplot(grid[3:4, :3])
         self.concentration_history_plot = fig.add_subplot(grid[4:, 4:])
+
+        cmaps = ["magma", "plasma", "viridis", sns.cubehelix_palette(20)]
+        self.concentration_cmap = cmaps[0]
+
+
 
     def imscatter(self, x, y, image, ax=None, zoom=1):
         try:
@@ -70,8 +75,13 @@ class Environment(object):
         self.t_array = self.t_array[1:]
 
     def _get_global_position(self, bee_info):
-        x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-5)[0])
-        y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-5)[0])
+        try:
+            x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-5)[0])
+            y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-5)[0])
+        except:
+            print(bee_info["x"])
+            print(bee_info["y"])
+            raw_input("")
         return x_i, y_i
 
     def display_environment_map(self, concentration_map, time_i, timestep, init):
@@ -79,7 +89,7 @@ class Environment(object):
             self.vmax = np.max(concentration_map.flatten())
 
         # Environment concentration heatmap
-        sns.heatmap(concentration_map, cbar=False, cmap="magma", ax=self.concentration_map, vmin=0, vmax=self.vmax, xticklabels=0, yticklabels=0)
+        sns.heatmap(concentration_map, cbar=False, cmap=self.concentration_cmap, ax=self.concentration_map, vmin=0, vmax=self.vmax, xticklabels=0, yticklabels=0)
 
         self.information_plot.text(0.1, 0.95, "  Bee          Pheromone Activity", size=10)
         for bee_i, bee in enumerate(self.bees):
@@ -116,9 +126,8 @@ class Environment(object):
 
 
         # Plot
-
         bee_distance_plot = sns.barplot(x="bees", y="bee_distances", data=self.bee_distance_df, color="salmon", ax=self.distance_plot)
-        self.distance_plot.set_ylim(0,self.max_distance_from_center)
+        self.distance_plot.set_ylim(0, self.max_distance_from_center)
         for item in bee_distance_plot.get_xticklabels():
             item.set_rotation(45)
 
@@ -128,7 +137,7 @@ class Environment(object):
 
         plt.savefig("{}/environment_timestep_{}".format(self.plot_save_dir, time_i))
 
-        if self.show_plot:
+        if self.real_time_visualization:
             plt.pause(0.005)
 
         self.concentration_map.cla()

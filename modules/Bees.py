@@ -4,12 +4,14 @@ warnings.simplefilter(action='ignore', category=FutureWarning)
 import numpy as np
 import scipy
 from scipy import ndimage
+from skimage.transform import rotate
 
 import matplotlib.pyplot as plt
 
 class Bee(object):
-    def __init__(self, bee_type, init_position, pheromone_concentration, activation_threshold, movement, activity, bias, delta_t, delta_x, min_x, max_x, emission_period, queen_movement_params, plot_dir):
+    def __init__(self, bee_type, init_position, pheromone_concentration, activation_threshold, movement, activity, bias, delta_t, delta_x, min_x, max_x, emission_period, queen_movement_params, plot_dir, rotate_bees_ON=False):
         self.type = bee_type
+        self.rotate_bees_ON = rotate_bees_ON
 
         self.img = ndimage.imread('imgs/queen_bee.png') if bee_type == "queen" else ndimage.imread('imgs/worker_bee.png')
         self.current_heading = 90
@@ -47,6 +49,31 @@ class Bee(object):
         self.plot_dir = plot_dir
         self.concentration_history = []
 
+    def rotate_bees(self):
+        try:
+            degree_to_queen = np.arctan2(self.bias_y, self.bias_x) * 180 / np.pi
+
+            degree_difference = self.current_heading + degree_to_queen
+
+            degree_difference *= -1
+
+            if self.type == "worker_6":
+                print("degree_to_queen: {}".format(degree_to_queen))
+                print("self.current_heading: {}".format(self.current_heading))
+                print("degree_difference: {}".format(degree_difference))
+                raw_input("")
+
+            # Rotate the image
+            self.img = rotate(self.img, degree_to_queen)
+
+            # Update current heading
+            self.current_heading = self.current_heading
+
+
+
+        except Exception as e:
+            print(e)
+
     def update(self):
 
         # If pheromone active, increment emission timestep
@@ -74,13 +101,9 @@ class Bee(object):
                 self.y += self.directions_to_queen["y"]*self.delta_x*steps
 
             # Rotate image!
-            # try:
-            #     degree_to_queen = np.arctan2(self.bias_y, self.bias_x) * 180 / np.pi
-            #     degree_diff = self.current_heading - degree_to_queen
-            #     self.img = scipy.ndimage.rotate(self.img, degree_diff)
-            #     print("degree: {}".format(degree_diff))
-            # except Exception as e:
-            #     print(e)
+            if self.rotate_bees_ON:
+                self.rotate_bees()
+
 
         # If random movement active, determine new movement behavior
         elif self.random_movement_active:
@@ -90,11 +113,18 @@ class Bee(object):
             sign = 1 if np.random.uniform() < 0.5 else -1
             steps = np.random.randint(1, 6)
 
-            # Update random movement direction
+            # Constrain movement to board
             self.__dict__[direction] += self.delta_x*sign*steps
 
-            # Constrain movement to board
-            self.__dict__[direction] = np.min([self.min_x, np.max([self.__dict__[direction], self.max_x])])
+            if self.__dict__[direction] <= self.min_x:
+                self.__dict__[direction] += self.delta_x
+                print("HERE")
+                print(self.__dict__[direction])
+
+            elif self.__dict__[direction] >= self.max_x:
+                self.__dict__[direction] -= self.delta_x
+                print("THERE")
+                print(self.__dict__[direction])
 
     def sense_environment(self, concentration_map, x_i, y_i):
         # If they already found the queen, do nothing
@@ -166,7 +196,7 @@ class Bee(object):
             self.queen_directed_movement = False
 
 class Swarm(object):
-    def __init__(self, num_workers, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold, delta_t, delta_x, min_x, max_x, emission_periods, queen_movement_params, worker_plot_dir):
+    def __init__(self, num_workers, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold, delta_t, delta_x, min_x, max_x, emission_periods, queen_movement_params, worker_plot_dir, rotate_bees_ON):
 
         queen_data = {
             "init_position"             : (0, 0),
@@ -206,7 +236,8 @@ class Swarm(object):
             "bias"                      : temp_bias,
             "emission_period"           : emission_periods["worker"],
             "queen_movement_params"     : queen_movement_params,
-            "plot_dir"                  : "{}/worker_{}".format(worker_plot_dir, bee_i)
+            "plot_dir"                  : "{}/worker_{}".format(worker_plot_dir, bee_i),
+            "rotate_bees_ON"            : rotate_bees_ON
         }
 
         worker_bees = {"worker_{}".format(i+1) : get_worker_data(i) for i in range(num_workers)}
