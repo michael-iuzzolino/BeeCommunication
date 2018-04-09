@@ -1,8 +1,8 @@
+import sys
 import json
 import numpy as np
 import seaborn as sns
 import pandas as pd
-
 
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
@@ -24,6 +24,8 @@ class Environment(object):
         # Instantiate environment plot figure
         self._setup_plots(plot_params)
 
+        self.measurements = {"distance_from_queen" : []}
+
     def _setup_plots(self, plot_params):
         self.plot_save_dir = plot_params['save_dir']
         self.plot_bee = "worker_1"
@@ -32,16 +34,34 @@ class Environment(object):
         fig = plt.figure(figsize=(9, 7))
         self.fig = fig
 
-        grid = plt.GridSpec(5, 5, wspace=0.4, hspace=0.3)
+        grid = plt.GridSpec(7, 5, wspace=0.4, hspace=0.3)
         self.concentration_map = fig.add_subplot(grid[0:3, 0:3])
-        self.information_plot = fig.add_subplot(grid[:5, 3:5])
+        self.information_plot = fig.add_subplot(grid[:4, 3:5])
         self.distance_plot = fig.add_subplot(grid[3:4, :3])
-        self.concentration_history_plot = fig.add_subplot(grid[4:, 4:])
+        self.concentration_history_plot = fig.add_subplot(grid[5:, 3:])
+        self.distance_history_plot = fig.add_subplot(grid[5:, :2])
 
         cmaps = ["magma", "plasma", "viridis", sns.cubehelix_palette(20)]
         self.concentration_cmap = cmaps[0]
 
+        # Switch bee profile
+        # ----------------------------------------------------------------------
+        def onpress(event):
+            valid_events = ['{}'.format(i) for i in range(10)]
+            if event.key in valid_events or event.key == 'enter':
+                if event.key == 'enter':
+                    if int(self.full_event_keys) > len(self.bees)-1:
+                        self.full_event_keys = ""
+                        print("Invalid Key Entry!")
+                        return
+                    self.concentration_history_plot.cla()
+                    self.plot_bee = "worker_{}".format(self.full_event_keys)
+                    self.full_event_keys = ""
+                else:
+                    self.full_event_keys += event.key
 
+        self.fig.canvas.mpl_connect('key_press_event', onpress)
+        # ----------------------------------------------------------------------
 
     def imscatter(self, x, y, image, ax=None, zoom=1):
         try:
@@ -81,7 +101,6 @@ class Environment(object):
         except:
             print(bee_info["x"])
             print(bee_info["y"])
-            raw_input("")
         return x_i, y_i
 
     def display_environment_map(self, concentration_map, time_i, timestep, init):
@@ -125,15 +144,25 @@ class Environment(object):
                 self.concentration_history_plot.set(xlabel='Timesteps', ylabel='Pheromone \nConcentration')
 
 
-        # Plot
+        # Distance Bar Plot
+        # ----------------------------------------------------------------------------------------
         bee_distance_plot = sns.barplot(x="bees", y="bee_distances", data=self.bee_distance_df, color="salmon", ax=self.distance_plot)
         self.distance_plot.set_ylim(0, self.max_distance_from_center)
         for item in bee_distance_plot.get_xticklabels():
             item.set_rotation(45)
 
         self.concentration_map.set_title("Timestep {}: {}s".format(time_i, timestep))
+        self.distance_plot.set(xlabel="", ylabel='Distance to Queen')
+        # ----------------------------------------------------------------------------------------
 
-        self.distance_plot.set(xlabel='Bees', ylabel='Distance to Queen')
+
+        # Plot average distance to queen
+        # ----------------------------------------------------------------------------------------
+        ave_distances = [ele["average"] for ele in self.measurements["distance_from_queen"]]
+        self.distance_history_plot.plot(ave_distances)
+        self.distance_history_plot.set_title("Average Distance from Queen")
+        self.distance_history_plot.set(xlabel='Timestep', ylabel='Average Distance')
+        # ----------------------------------------------------------------------------------------
 
         plt.savefig("{}/environment_timestep_{}".format(self.plot_save_dir, time_i))
 
@@ -161,6 +190,10 @@ class Environment(object):
 
             bee_names.append(bee.replace("_", "").capitalize())
             bee_distances.append(distance_to_queen)
+
+        # Save measurement
+        measurement_data = { "distances" : bee_distances, "average" : np.mean(bee_distances)}
+        self.measurements["distance_from_queen"].append(measurement_data)
 
         self.bee_distance_df = pd.DataFrame({"bees" : bee_names, "bee_distances" : bee_distances})
 
@@ -192,26 +225,11 @@ class Environment(object):
             json.dump(full_bee_data, outfile)
 
     def run(self):
-
-        def onpress(event):
-            valid_events = ['{}'.format(i) for i in range(10)]
-            if event.key in valid_events or event.key == 'enter':
-                if event.key == 'enter':
-                    if int(self.full_event_keys) > len(self.bees)-1:
-                        self.full_event_keys = ""
-                        print("Invalid Key Entry!")
-                        return
-                    self.concentration_history_plot.cla()
-                    self.plot_bee = "worker_{}".format(self.full_event_keys)
-                    self.full_event_keys = ""
-                else:
-                    self.full_event_keys += event.key
-
-        self.fig.canvas.mpl_connect('key_press_event', onpress)
-
         pheromone_emission_sources = []
-
         for environment_timestep_i, environment_timestep in enumerate(self.t_array):
+
+            sys.stdout.write("\rTimestep {}/{}".format(environment_timestep_i+1, len(self.t_array)))
+            sys.stdout.flush()
 
             # Iterate through each bee in the swarm to find emission sources
             for bee_i, bee in enumerate(self.bees):
@@ -265,3 +283,9 @@ class Environment(object):
                 self.display_environment_map(**plot_info)
             except KeyboardInterrupt:
                 exit(0)
+
+        self._save_measurement_data()
+
+    def _save_measurement_data(self):
+        with open("{}/distance_to_queen_history.json".format(self.data_dir_path), "w") as outfile:
+            json.dump(self.measurements, outfile)

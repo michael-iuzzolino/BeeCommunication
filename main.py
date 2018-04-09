@@ -10,9 +10,16 @@ from modules.Environment import Environment
 from modules.Bees import Swarm
 
 RANDOM_SEED = 42
-TESTING = True
-REAL_TIME_VISUALIZATION = True
+TESTING = False
+REAL_TIME_VISUALIZATION = False
 ROTATE_BEES_ON = False
+SECONDS_TO_RUN = 1
+
+NUM_WORKERS = 10
+DIFFUSION_COEFFICIENT = 0.25
+QUEEN_EMISSION_PERIOD = 15
+WORKER_EMISSION_PERIOD = 4
+DISABLE_PHEROMONE_ON_WORKER_MOVEMENT = True
 
 def make_directories(experiment_dir, experiment_i, num_worker_bees):
     # Experiment directory
@@ -70,7 +77,6 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
         "rotate_bees_ON"            : ROTATE_BEES_ON
     }
 
-
     plot_params = {
         "display_real_img"  : True,
         "save_dir"          : env_plots_dir_path
@@ -93,12 +99,6 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
     env.run()
 
 def main():
-    num_workers = 10
-    diffusion_coefficient = 0.25
-    queen_emission_period = 15
-    worker_emission_period = 4
-    disable_pheromone_on_worker_movement = True
-
     spatiotemporal_parameters = {
         "spatial"   : {
             "min_x"     : -2,
@@ -107,14 +107,15 @@ def main():
         },
         "temporal"  : {
             "start_t"   : 0,
-            "finish_t"  : 10.0,
+            "finish_t"  : SECONDS_TO_RUN,
             "delta_t"   : 0.05
         }
     }
 
-    queen_bee_concentrations = [0.01*(i+1) for i in range(10)]
-    worker_bee_concentrations = [0.005*(i+1) for i in range(10)]
-    worker_bee_thresholds = [0.005*(i+1) for i in range(10)]
+
+    queen_bee_concentrations = [0.01*(i+1) for i in range(2)]
+    worker_bee_concentrations = [0.005*(i+1) for i in range(2)]
+    worker_bee_thresholds = [0.005*(i+1) for i in range(2)]
 
     # Create directory for current experiment
     # -----------------------------------------------------------------------------
@@ -131,7 +132,7 @@ def main():
         }
 
         worker_bee_params = {
-            "number"            : num_workers,
+            "number"            : NUM_WORKERS,
             "concentration"     : 0.01,
             "threshold"         : 0.05,
             "emission_period"   : 4,
@@ -143,27 +144,28 @@ def main():
             "experiment_dir"            : experiment_dir,
             "queen_bee_params"          : queen_bee_params,
             "worker_bee_params"         : worker_bee_params,
-            "diffusion_coefficient"     : diffusion_coefficient,
+            "diffusion_coefficient"     : DIFFUSION_COEFFICIENT,
             "spatiotemporal_parameters" : spatiotemporal_parameters
         }
         run_experiment(**experiment_params)
     else:
+        num_experiments = len(queen_bee_concentrations) * len(worker_bee_concentrations) * len(worker_bee_thresholds)
         experiment_i = 0
         for queen_bee_concentration in queen_bee_concentrations:
             for worker_bee_concentration in worker_bee_concentrations:
                 for worker_bee_threshold in worker_bee_thresholds:
-                    print("Experiment {} --- Queen Concentration: {} -- Worker Concentration: {} -- Threshold: {}".format(experiment_i, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold))
+                    print("\n\nExperiment {}/{} --- Queen Concentration: {} -- Worker Concentration: {} -- Threshold: {}".format(experiment_i+1, num_experiments, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold))
                     queen_bee_params = {
                         "concentration"     : queen_bee_concentration,
-                        "emission_period"   : queen_emission_period
+                        "emission_period"   : QUEEN_EMISSION_PERIOD
                     }
 
                     worker_bee_params = {
-                        "number"            : num_workers,
+                        "number"            : NUM_WORKERS,
                         "concentration"     : worker_bee_concentration,
                         "threshold"         : worker_bee_threshold,
-                        "emission_period"   : worker_emission_period,
-                        "disable_pheromone" : disable_pheromone_on_worker_movement
+                        "emission_period"   : WORKER_EMISSION_PERIOD,
+                        "disable_pheromone" : DISABLE_PHEROMONE_ON_WORKER_MOVEMENT
                     }
 
                     experiment_params = {
@@ -171,7 +173,7 @@ def main():
                         "experiment_dir"            : experiment_dir,
                         "queen_bee_params"          : queen_bee_params,
                         "worker_bee_params"         : worker_bee_params,
-                        "diffusion_coefficient"     : diffusion_coefficient,
+                        "diffusion_coefficient"     : DIFFUSION_COEFFICIENT,
                         "spatiotemporal_parameters" : spatiotemporal_parameters
                     }
 

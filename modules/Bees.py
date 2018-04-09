@@ -69,8 +69,6 @@ class Bee(object):
             # Update current heading
             self.current_heading = self.current_heading
 
-
-
         except Exception as e:
             print(e)
 
@@ -103,7 +101,6 @@ class Bee(object):
             # Rotate image!
             if self.rotate_bees_ON:
                 self.rotate_bees()
-
 
         # If random movement active, determine new movement behavior
         elif self.random_movement_active:
