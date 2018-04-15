@@ -1,0 +1,13 @@
+.line {
+    fill: none;
+    stroke-width: 4px;
+}
+.heatmap-canvas {
+    height: 300px;
+}
+
+#play_button {
+    position: absolute;
+    left: "350px";
+    top: "320px";
+}

@@ -48,6 +48,8 @@ class Bee(object):
         # History information
         self.plot_dir = plot_dir
         self.concentration_history = []
+        self.position_history = []
+
 
     def rotate_bees(self):
         try:
@@ -115,13 +117,13 @@ class Bee(object):
 
             if self.__dict__[direction] <= self.min_x:
                 self.__dict__[direction] += self.delta_x
-                print("HERE")
                 print(self.__dict__[direction])
 
             elif self.__dict__[direction] >= self.max_x:
                 self.__dict__[direction] -= self.delta_x
-                print("THERE")
                 print(self.__dict__[direction])
+
+        self.position_history.append({"x": self.x, "y": self.y})
 
     def sense_environment(self, concentration_map, x_i, y_i):
         # If they already found the queen, do nothing

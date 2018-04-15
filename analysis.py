@@ -10,7 +10,6 @@ experiment_dir = experiment_folders_list[0]
 
 experiments_list = np.sort(glob2.glob("{}/*".format(experiment_dir)))
 
-
 distance_history = {}
 
 fig, ax = plt.subplots(2, 1, figsize=(6,7))

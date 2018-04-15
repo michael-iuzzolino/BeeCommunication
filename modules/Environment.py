@@ -3,6 +3,7 @@ import json
 import numpy as np
 import seaborn as sns
 import pandas as pd
+import h5py
 
 import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
@@ -25,6 +26,8 @@ class Environment(object):
         self._setup_plots(plot_params)
 
         self.measurements = {"distance_from_queen" : []}
+
+        self.concentration_map_history = []
 
     def _setup_plots(self, plot_params):
         self.plot_save_dir = plot_params['save_dir']
@@ -219,10 +222,19 @@ class Environment(object):
     def _save_data(self):
         full_bee_data = {}
         for bee_i, bee in enumerate(self.bees):
-            full_bee_data[bee.type] = list(bee.concentration_history)
+            full_bee_data[bee.type] = {
+                "concentration_history" : list(bee.concentration_history),
+                "position_history"      : list(bee.position_history)
+            }
 
         with open("{}/bee_concentration_history.json".format(self.data_dir_path), "w") as outfile:
             json.dump(full_bee_data, outfile)
+
+    def _save_concentration_map(self):
+
+        for map_i, map in enumerate(self.concentration_map_history):
+            with h5py.File("{}/concentration_maps/concentration_map_history_{}.h5".format(self.data_dir_path, map_i), "w") as outfile:
+                outfile.create_dataset("concentration_map_history", data=map)
 
     def run(self):
         pheromone_emission_sources = []
@@ -280,11 +292,13 @@ class Environment(object):
                     "timestep"          : environment_timestep,
                     "init"              : environment_timestep_i==0
                 }
+                self.concentration_map_history.append(environment_concentration_map.tolist())
                 self.display_environment_map(**plot_info)
             except KeyboardInterrupt:
                 exit(0)
 
         self._save_measurement_data()
+        self._save_concentration_map()
 
     def _save_measurement_data(self):
         with open("{}/distance_to_queen_history.json".format(self.data_dir_path), "w") as outfile:

@@ -13,7 +13,11 @@ RANDOM_SEED = 42
 TESTING = False
 REAL_TIME_VISUALIZATION = False
 ROTATE_BEES_ON = False
-SECONDS_TO_RUN = 1
+
+
+
+SECONDS_TO_RUN = 3
+EXPERIMENT_CONDITION_NUMS = 2
 
 NUM_WORKERS = 10
 DIFFUSION_COEFFICIENT = 0.25
@@ -28,19 +32,22 @@ def make_directories(experiment_dir, experiment_i, num_worker_bees):
     # data directory
     data_dir_path = "{}/data".format(experiment_dir_path)
 
+    concentration_map_dir_path = "{}/data/concentration_maps".format(experiment_dir_path)
+
     # plots directory
     plots_dir_path = "{}/plots".format(experiment_dir_path)
 
     # environment plots directory
     env_plots_dir_path = "{}/plots/environment".format(experiment_dir_path)
 
-    dir_paths = [experiment_dir_path, data_dir_path, plots_dir_path, env_plots_dir_path]
+    dir_paths = [experiment_dir_path, data_dir_path, plots_dir_path, env_plots_dir_path, concentration_map_dir_path]
 
     # Worker plots
     for worker_i in range(num_worker_bees):
         woker_dir_path = "{}/worker_{}".format(plots_dir_path, worker_i+1)
         dir_paths.append(woker_dir_path)
 
+    # Make dirs
     for dir_path in dir_paths:
         if not os.path.exists(dir_path):
             os.makedirs(dir_path)
@@ -113,9 +120,9 @@ def main():
     }
 
 
-    queen_bee_concentrations = [0.01*(i+1) for i in range(2)]
-    worker_bee_concentrations = [0.005*(i+1) for i in range(2)]
-    worker_bee_thresholds = [0.005*(i+1) for i in range(2)]
+    queen_bee_concentrations = [0.01*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
+    worker_bee_concentrations = [0.005*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
+    worker_bee_thresholds = [0.005*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
 
     # Create directory for current experiment
     # -----------------------------------------------------------------------------
