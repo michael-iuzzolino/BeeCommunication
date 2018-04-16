@@ -13,16 +13,20 @@ RANDOM_SEED = 42
 TESTING = False
 REAL_TIME_VISUALIZATION = False
 ROTATE_BEES_ON = False
+RANDOM_BEE_POSITIONS = False
 
-
-
-SECONDS_TO_RUN = 3
+SECONDS_TO_RUN = 5
+DELTA_T = 0.05 # 0.05
+DELTA_X = 0.01 # 0.01
+MIN_X = -3
+MAX_X = 3
 EXPERIMENT_CONDITION_NUMS = 2
 
-NUM_WORKERS = 10
+NUM_WORKERS = 8
 DIFFUSION_COEFFICIENT = 0.25
-QUEEN_EMISSION_PERIOD = 15
-WORKER_EMISSION_PERIOD = 4
+QUEEN_EMISSION_PERIOD = 5
+WORKER_EMISSION_PERIOD = 2
+WORKER_BEE_THRESHOLD = 0.5
 DISABLE_PHEROMONE_ON_WORKER_MOVEMENT = True
 
 def make_directories(experiment_dir, experiment_i, num_worker_bees):
@@ -81,7 +85,8 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
             "disable_pheromone" : worker_bee_params["disable_pheromone"]
         },
         "worker_plot_dir"           : plots_dir_path,
-        "rotate_bees_ON"            : ROTATE_BEES_ON
+        "rotate_bees_ON"            : ROTATE_BEES_ON,
+        "random_positions"          : RANDOM_BEE_POSITIONS
     }
 
     plot_params = {
@@ -108,21 +113,24 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
 def main():
     spatiotemporal_parameters = {
         "spatial"   : {
-            "min_x"     : -2,
-            "max_x"     : 2,
-            "delta_x"   : 0.005
+            "min_x"     : MIN_X,
+            "max_x"     : MAX_X,
+            "delta_x"   : DELTA_X
         },
         "temporal"  : {
             "start_t"   : 0,
             "finish_t"  : SECONDS_TO_RUN,
-            "delta_t"   : 0.05
+            "delta_t"   : DELTA_T
         }
     }
 
-
-    queen_bee_concentrations = [0.01*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
-    worker_bee_concentrations = [0.005*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
-    worker_bee_thresholds = [0.005*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
+    # queen_bee_concentrations = [0.01*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
+    # worker_bee_concentrations = [0.005*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
+    # diffusion_coefficients = [0.05*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
+    queen_bee_concentrations = np.linspace(0.01, 0.5, EXPERIMENT_CONDITION_NUMS)
+    worker_bee_concentrations = np.linspace(0.005, 0.5, EXPERIMENT_CONDITION_NUMS)
+    diffusion_coefficients = np.linspace(0.05, 0.5, EXPERIMENT_CONDITION_NUMS)
+    worker_bee_thresholds = np.linspace(0, 0.5, EXPERIMENT_CONDITION_NUMS)
 
     # Create directory for current experiment
     # -----------------------------------------------------------------------------
@@ -156,37 +164,38 @@ def main():
         }
         run_experiment(**experiment_params)
     else:
-        num_experiments = len(queen_bee_concentrations) * len(worker_bee_concentrations) * len(worker_bee_thresholds)
+        num_experiments = len(queen_bee_concentrations) * len(worker_bee_concentrations) * len(diffusion_coefficients) * len(worker_bee_thresholds)
         experiment_i = 0
         for queen_bee_concentration in queen_bee_concentrations:
             for worker_bee_concentration in worker_bee_concentrations:
-                for worker_bee_threshold in worker_bee_thresholds:
-                    print("\n\nExperiment {}/{} --- Queen Concentration: {} -- Worker Concentration: {} -- Threshold: {}".format(experiment_i+1, num_experiments, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold))
-                    queen_bee_params = {
-                        "concentration"     : queen_bee_concentration,
-                        "emission_period"   : QUEEN_EMISSION_PERIOD
-                    }
+                for diffusion_coefficient in diffusion_coefficients:
+                    for worker_bee_threshold in worker_bee_thresholds:
+                        print("\n\nExperiment {}/{} --- Queen Concentration: {} -- Worker Concentration: {} -- Diffussion Coefficient: {}".format(experiment_i+1, num_experiments, queen_bee_concentration, worker_bee_concentration, diffusion_coefficient))
+                        queen_bee_params = {
+                            "concentration"     : queen_bee_concentration,
+                            "emission_period"   : QUEEN_EMISSION_PERIOD
+                        }
 
-                    worker_bee_params = {
-                        "number"            : NUM_WORKERS,
-                        "concentration"     : worker_bee_concentration,
-                        "threshold"         : worker_bee_threshold,
-                        "emission_period"   : WORKER_EMISSION_PERIOD,
-                        "disable_pheromone" : DISABLE_PHEROMONE_ON_WORKER_MOVEMENT
-                    }
+                        worker_bee_params = {
+                            "number"            : NUM_WORKERS,
+                            "concentration"     : worker_bee_concentration,
+                            "threshold"         : worker_bee_threshold,
+                            "emission_period"   : WORKER_EMISSION_PERIOD,
+                            "disable_pheromone" : DISABLE_PHEROMONE_ON_WORKER_MOVEMENT
+                        }
 
-                    experiment_params = {
-                        "experiment_i"              : experiment_i,
-                        "experiment_dir"            : experiment_dir,
-                        "queen_bee_params"          : queen_bee_params,
-                        "worker_bee_params"         : worker_bee_params,
-                        "diffusion_coefficient"     : DIFFUSION_COEFFICIENT,
-                        "spatiotemporal_parameters" : spatiotemporal_parameters
-                    }
+                        experiment_params = {
+                            "experiment_i"              : experiment_i,
+                            "experiment_dir"            : experiment_dir,
+                            "queen_bee_params"          : queen_bee_params,
+                            "worker_bee_params"         : worker_bee_params,
+                            "diffusion_coefficient"     : diffusion_coefficient,
+                            "spatiotemporal_parameters" : spatiotemporal_parameters
+                        }
 
-                    run_experiment(**experiment_params)
+                        run_experiment(**experiment_params)
 
-                    experiment_i += 1
+                        experiment_i += 1
 
 if __name__ == '__main__':
     np.random.seed(seed=RANDOM_SEED)

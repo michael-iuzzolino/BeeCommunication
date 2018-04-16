@@ -125,9 +125,11 @@ class Bee(object):
 
         self.position_history.append({"x": self.x, "y": self.y})
 
+
     def sense_environment(self, concentration_map, x_i, y_i):
         # If they already found the queen, do nothing
         if self.found_queen:
+            self.position_history.append({"x": self.x, "y": self.y})
             return
 
         # Check if worker will be activated
@@ -195,7 +197,7 @@ class Bee(object):
             self.queen_directed_movement = False
 
 class Swarm(object):
-    def __init__(self, num_workers, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold, delta_t, delta_x, min_x, max_x, emission_periods, queen_movement_params, worker_plot_dir, rotate_bees_ON):
+    def __init__(self, num_workers, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold, delta_t, delta_x, min_x, max_x, emission_periods, queen_movement_params, worker_plot_dir, rotate_bees_ON, random_positions):
 
         queen_data = {
             "init_position"             : (0, 0),
@@ -214,10 +216,21 @@ class Swarm(object):
 
         bees = {"queen" : queen_data}
 
-        bee_distances = [0.4, 0.55, 0.95, 1.05]
-        sign = lambda : 1 if np.random.uniform() < 0.5 else -1
-        position = lambda : bee_distances[np.random.randint(len(bee_distances))]*sign()
-        new_position = lambda bee_i : (position(), position())
+        if random_positions:
+            bee_distances = [0.4, 0.55, 0.95, 1.05]
+            sign = lambda : 1 if np.random.uniform() < 0.5 else -1
+            position = lambda : bee_distances[np.random.randint(len(bee_distances))]*sign()
+            new_position = lambda bee_i : (position(), position())
+        else:
+            def new_position(bee_i):
+                with open("bee_positions.txt", "r") as infile:
+                    bee_position_data = infile.readlines()
+                bee_i_position = bee_position_data[bee_i].split(",")
+                bee_i_position = [float(ele) for ele in bee_i_position]
+
+                return bee_i_position
+
+
 
         temp_bias_1 = 0.25
         temp_bias_2 = np.sqrt(1 - temp_bias_1**2)

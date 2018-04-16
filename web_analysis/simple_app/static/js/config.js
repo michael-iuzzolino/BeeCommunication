@@ -1,0 +1,38 @@
+var EXPERIMENTS_DATA;
+var PLAYBACK_RATE = 500;
+var COLORS = ["#ffcc00", "#cc66ff"];
+var plotted_experiment_ids = [];
+var xScale, yScale;
+var svg;
+var xScale, yScale, colorScale;
+var margin, width, height;
+var line;
+var current_timestep = 0;
+var num_timesteps;
+var current_vis_id;
+var max_concentration;
+
+var min_spatial_x = -3;
+var max_spatial_x = 3;
+var PLAYING = false;
+var PLAY_COLOR = "#ccff99";
+var STOP_COLOR = "#ffffff";
+var distance_summary_plot_height = 300;
+
+var heatmap_size = 600;
+
+var beeXScale, beeYScale;
+var heatmapInstance;
+var selected_id;
+var continue_plotting = false;
+var selected_line_color = "#00e600";
+var mouseover_line_color = "#0000ff";
+
+var worker_bee_icon_size = 25;
+var queen_bee_icon_size = 55;
+var queen_img_path_1 = 'https://d30y9cdsu7xlg0.cloudfront.net/png/348444-200.png';
+var queen_img_path_2 = "simple_app/static/icons/queen_bee.png";
+var worker_img_path_1 = 'https://cdn0.iconfinder.com/data/icons/thin-nature/24/thin-0807_bees_honey-512.png';
+var worker_img_path_2 = "simple_app/static/icons/worker_bee.png";
+
+var bee_ids = [];

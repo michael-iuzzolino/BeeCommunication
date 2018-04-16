@@ -29,6 +29,8 @@ class Environment(object):
 
         self.concentration_map_history = []
 
+        self.other_bee_distances = []
+
     def _setup_plots(self, plot_params):
         self.plot_save_dir = plot_params['save_dir']
         self.plot_bee = "worker_1"
@@ -84,6 +86,9 @@ class Environment(object):
         return artists
 
     def _setup_spatial_information(self, min_x, max_x, delta_x):
+        self.min_x = min_x
+        self.max_x = max_x
+
         self.X1 = np.arange(min_x, max_x+delta_x, delta_x)
         self.X2 = np.arange(min_x, max_x+delta_x, delta_x)
         self.x_grid, self.y_grid = np.meshgrid(self.X1, self.X2)
@@ -102,8 +107,9 @@ class Environment(object):
             x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-5)[0])
             y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-5)[0])
         except:
-            print(bee_info["x"])
-            print(bee_info["y"])
+            print('bee_info["x"]: {}'.format(bee_info["x"]))
+            print('bee_info["y"]: {}'.format(bee_info["y"]))
+
         return x_i, y_i
 
     def display_environment_map(self, concentration_map, time_i, timestep, init):
@@ -176,6 +182,31 @@ class Environment(object):
         self.information_plot.cla()
         self.distance_plot.cla()
 
+    # def _get_distances_to_other_bees(self, bee_positions):
+    #
+    #     target_bees = [bee for bee in bee_positions.keys() if bee != "queen"] # ["worker_1", "worker_2", ..., "worker_N"]
+    #
+    #     for target_bee in target_bees:
+    #         target_bee_position = bee_positions[target_bee]
+    #         target_bee_x = target_bee_position["x"]
+    #         target_bee_y = target_bee_position["y"]
+    #
+    #         other_bees = [bee for bee in target_bees if bee != target_bee]
+    #         distances = []
+    #         for other_bee in otherbees:
+    #             other_bee_position = bee_positions[other_bee]
+    #             other_bee_x = other_bee_position["x"]
+    #             other_bee_y = other_bee_position["y"]
+    #
+    #             distance = np.sqrt((target_bee_x - other_bee_x)**2 + (target_bee_y - other_bee_y)**2)
+    #             distances.append(distance)
+    #
+    #         distance_average = np.mean(distances)
+    #
+    #         other_bee_distances.append({"bee_id" : target_bee, "distance_average" : distance_average})
+
+
+
     def _get_distances_to_queen(self, bee_positions):
         queen = bee_positions["queen"]
         queen_x = queen["x"]
@@ -195,7 +226,7 @@ class Environment(object):
             bee_distances.append(distance_to_queen)
 
         # Save measurement
-        measurement_data = { "distances" : bee_distances, "average" : np.mean(bee_distances)}
+        measurement_data = { "distances" : bee_distances, "average" : np.median(bee_distances)}
         self.measurements["distance_from_queen"].append(measurement_data)
 
         self.bee_distance_df = pd.DataFrame({"bees" : bee_names, "bee_distances" : bee_distances})
@@ -231,7 +262,6 @@ class Environment(object):
             json.dump(full_bee_data, outfile)
 
     def _save_concentration_map(self):
-
         for map_i, map in enumerate(self.concentration_map_history):
             with h5py.File("{}/concentration_maps/concentration_map_history_{}.h5".format(self.data_dir_path, map_i), "w") as outfile:
                 outfile.create_dataset("concentration_map_history", data=map)
@@ -299,6 +329,7 @@ class Environment(object):
 
         self._save_measurement_data()
         self._save_concentration_map()
+        plt.close(self.fig)
 
     def _save_measurement_data(self):
         with open("{}/distance_to_queen_history.json".format(self.data_dir_path), "w") as outfile:

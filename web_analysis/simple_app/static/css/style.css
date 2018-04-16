@@ -2,12 +2,96 @@
     fill: none;
     stroke-width: 4px;
 }
+
 .heatmap-canvas {
-    height: 300px;
+    opacity : 0.0;
+}
+
+#concentration_div {
+    height: 800px;
+    width: 800px;
+}
+
+
+.option_text {
+    margin-left: 25px;
+    word-spacing: 65px;
+}
+
+#form_div {
+    text-align: center;
+}
+
+#experiment_selection_header {
+    font-size: 8px;
+    margin: 0px;
+    margin-left: 5px;
+}
+
+#bee_svg {
+    position: absolute;
+    left: 0px;
+    opacity : 0.0;
+}
+
+#timestep_label {
+    position: absolute;
+    top: -25px;
+}
+
+#vis_div {
+    text-align: center;
+}
+
+#bee_name_tooltip_div {
+    position: absolute;
+    text-align: center;
+    width: 60px;
+    height: 24px;
+    padding: 2px;
+    font: 12px sans-serif;
+    background: lightsteelblue;
+    border: 0px;
+    border-radius: 8px;
+    pointer-events: none;
+}
+
+#distance_tooltip_div {
+    position: absolute;
+    text-align: center;
+    width: 60px;
+    height: 24px;
+    padding: 2px;
+    font: 12px sans-serif;
+    border: 0px;
+    pointer-events: none;
+}
+
+#concentration_div {
+    margin: 0 auto;
+    top: 50px;
+    left: 50px;
+}
+
+#timestep_marker {
+    fill: "#fff";
+    stroke : "#000";
+}
+
+.bee_to_queen_g line {
+    stroke-width: 2px;
+}
+
+#exeriment_selection {
+    size: 10;
+}
+
+#params_div {
+    text-align: center;
 }
 
 #play_button {
-    position: absolute;
-    left: "350px";
-    top: "320px";
+    text-align: center;
+    position: relative;
+    left: -120px;
 }
