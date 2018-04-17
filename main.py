@@ -15,14 +15,20 @@ REAL_TIME_VISUALIZATION = False
 ROTATE_BEES_ON = False
 RANDOM_BEE_POSITIONS = False
 
-SECONDS_TO_RUN = 5
+CONDITION_COUNTS = {
+    "queen" : 2,
+    "worker_concentration" : 2,
+    "worker_threshold" : 2,
+    "diffusion_cefficient" : 2
+}
+
+SECONDS_TO_RUN = 2
 DELTA_T = 0.05 # 0.05
 DELTA_X = 0.01 # 0.01
 MIN_X = -3
 MAX_X = 3
-EXPERIMENT_CONDITION_NUMS = 2
 
-NUM_WORKERS = 8
+NUM_WORKERS = 12
 DIFFUSION_COEFFICIENT = 0.25
 QUEEN_EMISSION_PERIOD = 5
 WORKER_EMISSION_PERIOD = 2
@@ -124,13 +130,10 @@ def main():
         }
     }
 
-    # queen_bee_concentrations = [0.01*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
-    # worker_bee_concentrations = [0.005*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
-    # diffusion_coefficients = [0.05*(i+1) for i in range(EXPERIMENT_CONDITION_NUMS)]
-    queen_bee_concentrations = np.linspace(0.01, 0.5, EXPERIMENT_CONDITION_NUMS)
-    worker_bee_concentrations = np.linspace(0.005, 0.5, EXPERIMENT_CONDITION_NUMS)
-    diffusion_coefficients = np.linspace(0.05, 0.5, EXPERIMENT_CONDITION_NUMS)
-    worker_bee_thresholds = np.linspace(0, 0.5, EXPERIMENT_CONDITION_NUMS)
+    queen_bee_concentrations = np.linspace(0.01, 0.5, CONDITION_COUNTS["queen"])
+    worker_bee_concentrations = np.linspace(0.005, 0.5, CONDITION_COUNTS["worker_concentration"])
+    diffusion_coefficients = np.linspace(0.05, 0.5, CONDITION_COUNTS["worker_threshold"])
+    worker_bee_thresholds = np.linspace(0, 0.5, CONDITION_COUNTS["diffusion_cefficient"])
 
     # Create directory for current experiment
     # -----------------------------------------------------------------------------

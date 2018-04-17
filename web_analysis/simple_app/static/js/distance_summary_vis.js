@@ -1,5 +1,7 @@
 function initVisPlot(experiment_data) {
 
+    d3.select("#vis_div_svg").remove();
+
     var timesteps = experiment_data.timesteps;
     var max_timestep = d3.max(timesteps);
 
@@ -34,6 +36,7 @@ function initVisPlot(experiment_data) {
         .range([height, 0]); // output
 
     svg = d3.select("#vis_div").append("svg")
+        .attr("id", "vis_div_svg")
         .attr("width", width + margin.left + margin.right)
         .attr("height", height + margin.top + margin.bottom)
       .append("g")

@@ -78,9 +78,52 @@ function reset_line_style() {
     }
 }
 
+function removeVisualizations() {
+    console.log("HERE");
+    var remove_tags = ".heatmap-canvas, #bee_svg, #timestep_label, #timestep_marker, #bee_distance_svg, #play_button";
+    d3.selectAll(remove_tags)
+        .transition()
+        .duration(750)
+        .style("opacity", 0.0);
 
+    setTimeout(function() {
+        d3.selectAll(remove_tags).remove();
+        selected_id = undefined;
+        current_vis_id = undefined;
+    }, 800);
+}
+
+function setup_experiment_folder_selection() {
+
+    d3.select("#exeriment_folder_selection")
+        .on("change", function(d) {
+            var optionSelected = $("option:selected", this);
+            var valueSelected = this.value;
+            SELECTED_EXPERIMENT_FOLDER = valueSelected;
+
+            removeVisualizations();
+
+            // Ajax call to load data for setup_experiment_selection()
+            loadExperimentFolderData();
+        });
+
+    d3.select("#exeriment_folder_selection").selectAll("option")
+        .data(EXPERIMENT_FOLDERS).enter()
+        .append("option")
+        .attr("class", "option_text")
+        .attr("value", function(d) {
+            return d;
+        })
+        .text(function(d) {
+            var last_index = (d.split("/")).length - 1;
+            return d.split("/")[last_index];
+        });
+}
 
 function setup_experiment_selection() {
+
+    d3.select("#save_plot_button").remove();
+
     var experiment_keys = Object.keys(EXPERIMENTS_DATA);
 
     d3.select("#exeriment_selection")
@@ -138,11 +181,35 @@ function setup_experiment_selection() {
         });
 }
 
-function callPythonBackend() {
+
+function getExperimentFolders() {
+    $.ajax({
+        url: "/init_experiment_folders",
+        method: "POST",
+        contentType: 'application/json',
+        success: function(python_result){
+            EXPERIMENT_FOLDERS = python_result["experiment_folders"];
+            SELECTED_EXPERIMENT_FOLDER = EXPERIMENT_FOLDERS[0];
+
+            setup_experiment_folder_selection();
+
+            // Initial setup
+            loadExperimentFolderData();
+        }
+    });
+}
+
+function loadExperimentFolderData() {
+    var sendDict = {
+        "folder_path" : SELECTED_EXPERIMENT_FOLDER
+    }
+
     $.ajax({
         url: "/load_data",
         method: "POST",
         contentType: 'application/json',
+        dataType: "json",
+        data: JSON.stringify(sendDict),
         success: function(python_result){
             EXPERIMENTS_DATA = python_result["results"];
             setup_experiment_selection();
@@ -153,7 +220,7 @@ function callPythonBackend() {
 
 function initializerUserInterface() {
     var body = d3.select("body");
-    callPythonBackend();
+    getExperimentFolders();
 }
 
 $(function() {

@@ -1,11 +1,13 @@
 from simple_app import app
 from flask import render_template, jsonify, request
 import os
+import sys
 import json
 import glob2
 import numpy as np
 import h5py
 import pandas as pd
+
 
 @app.route('/')
 def index():
@@ -51,7 +53,10 @@ def load_experiment():
 
 @app.route('/load_data', methods=["GET", "POST"])
 def load_data():
-    experiments_list = glob2.glob("simple_app/static/data/*")
+
+    experiment_folder = request.json["folder_path"]
+
+    experiments_list = glob2.glob("{}/*".format(experiment_folder))
 
     distance_history = {}
 
@@ -103,6 +108,11 @@ def load_data():
     results_dict = {"results" : distance_history}
 
     return jsonify(results_dict)
+
+@app.route('/init_experiment_folders', methods=["GET", "POST"])
+def init_experiment_folders():
+    experiment_folders = glob2.glob('../experiments/*')
+    return jsonify({"experiment_folders" : experiment_folders})
 
 @app.route('/save_plot', methods=["GET", "POST"])
 def save_plot():

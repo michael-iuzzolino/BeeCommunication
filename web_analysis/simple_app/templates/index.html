@@ -35,6 +35,13 @@
         <div class="row">
             <div id="params_div", class="col-md-4">
                 <form>
+                    <div id="experiment_dirs_form_div" class="form-group">
+                        <label for="exeriment_folder_selection">Experiment Folders</label>
+                        <select class="form-control" id="exeriment_folder_selection">
+                        </select>
+                    </div>
+                </form>
+                <form>
                     <div id="form_div" class="form-group">
                         <label for="exeriment_selection">Experiments</label>
                         <p id="experiment_selection_header">Diffusion Coefficient &nbsp; &nbsp; &nbsp; Queen Concentration &nbsp; &nbsp; &nbsp; Worker Concentration</p>
@@ -48,6 +55,11 @@
             </div>
         </div>
     </div>
-    <div id="concentration_div"></div>
+    <div id="experiment_visualizations">
+        <div class="row">
+            <div id="concentration_div", class="col-md-8"></div>
+            <div id="bee_distance_div", class="col-md-4"></div>
+        </div>
+    </div>
 </body>
 </html>

@@ -9,7 +9,8 @@
 
 #concentration_div {
     height: 800px;
-    width: 800px;
+    width: 600px;
+
 }
 
 
@@ -54,6 +55,7 @@
     border: 0px;
     border-radius: 8px;
     pointer-events: none;
+    opacity: 0.0;
 }
 
 #distance_tooltip_div {
@@ -65,6 +67,7 @@
     font: 12px sans-serif;
     border: 0px;
     pointer-events: none;
+    opacity: 0.0;
 }
 
 #concentration_div {
@@ -73,13 +76,22 @@
     left: 50px;
 }
 
+
+#bee_distance_div {
+    margin: 0 auto;
+    top: 50px;
+    left: 50px;
+    opacity: 0.0;
+}
+
 #timestep_marker {
     fill: "#fff";
     stroke : "#000";
 }
 
-.bee_to_queen_g line {
-    stroke-width: 2px;
+.bee_line {
+    stroke-width: 5px;
+    stroke: "#5c5cd6";
 }
 
 #exeriment_selection {
@@ -93,5 +105,6 @@
 #play_button {
     text-align: center;
     position: relative;
-    left: -120px;
+    left: 470px;
+    top: -40px;
 }

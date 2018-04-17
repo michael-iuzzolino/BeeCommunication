@@ -1,4 +1,6 @@
 var EXPERIMENTS_DATA;
+var EXPERIMENT_FOLDERS;
+var SELECTED_EXPERIMENT_FOLDER;
 var PLAYBACK_RATE = 500;
 var COLORS = ["#ffcc00", "#cc66ff"];
 var plotted_experiment_ids = [];
@@ -19,6 +21,8 @@ var PLAY_COLOR = "#ccff99";
 var STOP_COLOR = "#ffffff";
 var distance_summary_plot_height = 300;
 
+
+
 var heatmap_size = 600;
 
 var beeXScale, beeYScale;
@@ -36,3 +40,11 @@ var worker_img_path_1 = 'https://cdn0.iconfinder.com/data/icons/thin-nature/24/t
 var worker_img_path_2 = "simple_app/static/icons/worker_bee.png";
 
 var bee_ids = [];
+
+var beeBarXScale, beeBarYScale;
+var BEE_DISTANCES = {};
+var bee_bar_width = 5;
+var bee_bar_graph_height = 300;
+var bee_bar_graph_width = 600;
+var DEFAULT_BAR_COLOR = "#eee6ff";
+var BEE_BAR_SELECT_COLOR = "#ff4da6";

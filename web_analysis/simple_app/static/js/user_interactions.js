@@ -37,6 +37,8 @@ function mouseout_line(this_id) {
     }
 }
 
+
+
 function click_line(this_id) {
 
     // Lower Opacity on all other lines

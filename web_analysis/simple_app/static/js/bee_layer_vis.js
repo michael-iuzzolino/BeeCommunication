@@ -13,7 +13,13 @@ function initBeeLayer(backend_results) {
         });
         x_values.push(bee_i.x);
         y_values.push(bee_i.y);
+
+        BEE_DISTANCES[bee_key] = Math.sqrt((bee_i.x)**2 + (bee_i.y)**2)
     }
+
+    // Init bee distance vis
+    initBeeDistanceVis();
+
 
     // Init tooltip
     d3.select('body').append("div").attr("id", "bee_name_tooltip_div");
@@ -66,10 +72,10 @@ function initBeeLayer(backend_results) {
             return icon_size;
         })
         .on("mouseover", function(d) {
-
-            var distance_to_queen = Math.sqrt((d.x)**2 + (d.y)**2);
+            var distance_to_queen = BEE_DISTANCES[d.bee_id];
 
             var bee_name_tooltip_div = d3.select("#bee_name_tooltip_div");
+
             bee_name_tooltip_div.transition()
                 .duration(200)
                 .style("opacity", .9);
@@ -92,11 +98,12 @@ function initBeeLayer(backend_results) {
                 .style("left", (d3.event.pageX) + "px")
                 .style("top", (d3.event.pageY) + "px");
 
-
             d3.select("#"+d.bee_id+"_line").transition().style("opacity", 1.0);
+            d3.select("#"+d.bee_id+"_bar").transition().style("fill", BEE_BAR_SELECT_COLOR);
 
+            d3.select(this).moveToFront();
         })
-        .on("mouseout", function() {
+        .on("mouseout", function(d) {
             d3.select("#bee_name_tooltip_div").transition()
                 .duration(500)
                 .style("opacity", 0);
@@ -108,6 +115,8 @@ function initBeeLayer(backend_results) {
             for (var j=0; j < bee_ids.length; j++) {
                 d3.select("#"+bee_ids[j]+"_line").transition().style("opacity", 0.0);
             }
+
+            d3.select("#"+d.bee_id+"_bar").transition().style("fill", DEFAULT_BAR_COLOR);
         });
 
 
@@ -117,6 +126,7 @@ function initBeeLayer(backend_results) {
         .attr("class", "bee_to_queen_g");
 
     lines_g.append("line")
+        .attr("class", "bee_line")
         .attr("id", function(d) {
             return d.bee_id + "_line";
         })
@@ -148,7 +158,12 @@ function updateBeeLayer(backend_results) {
             "x"         : bee_i.x,
             "y"         : bee_i.y,
         });
+
+        BEE_DISTANCES[bee_key] = Math.sqrt((bee_i.x)**2 + (bee_i.y)**2)
     }
+
+    // update bee distance vis
+    updateBeeDistanceVis();
 
     d3.selectAll(".bees")
         .data(updated_bee_data)  // Update with new data
@@ -169,5 +184,114 @@ function updateBeeLayer(backend_results) {
         })
         .attr("y2", function(d) {
             return beeYScale(d.y);
+        });
+}
+
+function initBeeDistanceVis() {
+
+    d3.select("#bee_distance_svg").remove();
+
+    var margin = {top: 50, right: 100, bottom: 50, left: 100};
+    var width = bee_bar_graph_width - margin.left - margin.right;
+    var height = bee_bar_graph_height - margin.top - margin.bottom;
+
+    // prep data
+    var bee_data = [];
+    for (var bee_key in BEE_DISTANCES) {
+        if (bee_key === "queen") {
+            continue;
+        }
+        bee_data.push({
+            "distance"  : BEE_DISTANCES[bee_key],
+            "bee_key"   : bee_key
+        });
+    }
+
+    beeBarXScale = d3.scaleBand()
+        .domain(bee_data.map(function(d) { return d.bee_key; }))
+        .range([0, width])
+        .padding(0.1);
+
+    beeBarYScale = d3.scaleLinear()
+        .domain([0, 3])
+        .range([height, 0]);
+
+    var bee_distance_svg = d3.select("#bee_distance_div").append("svg")
+        .attr("id", "bee_distance_svg")
+        .attr("height", bee_bar_graph_height)
+        .attr("width", bee_bar_graph_width);
+
+    var bee_distance_g = bee_distance_svg.append("g")
+        .attr("id", "bee_distance_g")
+        .attr("transform", "translate(70, -20)");
+
+    // Add barchart bars
+    bee_distance_g.selectAll("rect.bee_bar")
+        .data(bee_data).enter()
+        .append("rect")
+        .attr("class", "bee_bar")
+        .attr('id', function(d) {
+            return d.bee_key + "_bar";
+        })
+        .attr("x", function(d) {
+            return beeBarXScale(d.bee_key);
+        })
+        .attr("width", beeBarXScale.bandwidth())
+        .attr("y", function(d) {
+            return beeBarYScale(d.distance);
+        })
+        .attr("height", function(d) {
+            return height - beeBarYScale(d.distance);
+        })
+        .style("fill", DEFAULT_BAR_COLOR);
+
+    // add the x Axis
+    bee_distance_g.append("g")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(beeBarXScale))
+        .selectAll("text")
+            .style("text-anchor", "end")
+            .attr("dx", "-.8em")
+            .attr("dy", ".15em")
+            .attr("transform", function(d) {
+                return "rotate(-45)"
+            });
+
+    // add the y Axis
+    bee_distance_g.append("g")
+        .call(d3.axisLeft(beeBarYScale));
+
+    // y axis text
+    bee_distance_g.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr('x', 0 - margin.left*1.1)
+        .attr('y', 0 - 50)
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Distance from Queen");
+
+    d3.select("#bee_distance_div").transition(1000).style("opacity", 1.0);
+}
+
+function updateBeeDistanceVis() {
+    // prep data
+    var bee_data = [];
+    for (var bee_key in BEE_DISTANCES) {
+        if (bee_key === "queen") {
+            continue;
+        }
+        bee_data.push({
+            "distance"  : BEE_DISTANCES[bee_key],
+            "bee_key"   : bee_key
+        });
+    }
+
+    d3.selectAll("rect.bee_bar").data(bee_data)
+        .transition()
+        .attr("y", function(d) {
+            return beeBarYScale(d.distance);
+        })
+        .attr("height", function(d) {
+            return height - beeBarYScale(d.distance);
         });
 }
