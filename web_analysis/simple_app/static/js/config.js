@@ -48,3 +48,6 @@ var bee_bar_graph_height = 300;
 var bee_bar_graph_width = 600;
 var DEFAULT_BAR_COLOR = "#eee6ff";
 var BEE_BAR_SELECT_COLOR = "#ff4da6";
+
+var BEE_CONCENTRATION_HISTORIES = {};
+var beeConcentrationXScale, beeConcentrationYScale;

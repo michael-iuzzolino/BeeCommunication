@@ -1,5 +1,7 @@
+
 function initBeeLayer(backend_results) {
     var init_bee_positions = backend_results["bees_position_history"];
+    BEE_CONCENTRATION_HISTORIES = backend_results["bee_concentration_history"];
 
     var init_bee_data = [];
     var x_values = [];
@@ -20,11 +22,12 @@ function initBeeLayer(backend_results) {
     // Init bee distance vis
     initBeeDistanceVis();
 
+    // Init individual bee concentration history
+    // init_bee_concentration_history_vis();
 
     // Init tooltip
     d3.select('body').append("div").attr("id", "bee_name_tooltip_div");
     d3.select('body').append("div").attr("id", "distance_tooltip_div");
-
 
     // Create SVG overlay
     var bee_svg = d3.select("#concentration_div").append("svg")
@@ -39,11 +42,6 @@ function initBeeLayer(backend_results) {
     beeYScale = d3.scaleLinear()
         .domain([-3.0, 3.0])
         .range([0, heatmap_size]);
-
-    bee_ids = [];
-    for (var j=0; j < init_bee_data.length; j++) {
-        bee_ids.push(init_bee_data[j].bee_id);
-    }
 
     bee_svg.selectAll('image.bees')
         .data(init_bee_data).enter()
@@ -71,9 +69,7 @@ function initBeeLayer(backend_results) {
             var icon_size = (d.bee_id.split("_")[0] === "worker") ? worker_bee_icon_size : queen_bee_icon_size;
             return icon_size;
         })
-        .on("mouseover", function(d) {
-            var distance_to_queen = BEE_DISTANCES[d.bee_id];
-
+        .on("click", function(d) {
             var bee_name_tooltip_div = d3.select("#bee_name_tooltip_div");
 
             bee_name_tooltip_div.transition()
@@ -93,6 +89,7 @@ function initBeeLayer(backend_results) {
                 .style("opacity", .9);
 
             distance_tooltip_div.html(function() {
+                    var distance_to_queen = BEE_DISTANCES[d.bee_id];
                     return distance_to_queen.toFixed(4);
                 })
                 .style("left", (d3.event.pageX) + "px")
@@ -101,23 +98,8 @@ function initBeeLayer(backend_results) {
             d3.select("#"+d.bee_id+"_line").transition().style("opacity", 1.0);
             d3.select("#"+d.bee_id+"_bar").transition().style("fill", BEE_BAR_SELECT_COLOR);
 
-            d3.select(this).moveToFront();
-        })
-        .on("mouseout", function(d) {
-            d3.select("#bee_name_tooltip_div").transition()
-                .duration(500)
-                .style("opacity", 0);
-
-            d3.select("#distance_tooltip_div").transition()
-                .duration(500)
-                .style("opacity", 0);
-
-            for (var j=0; j < bee_ids.length; j++) {
-                d3.select("#"+bee_ids[j]+"_line").transition().style("opacity", 0.0);
-            }
-
-            d3.select("#"+d.bee_id+"_bar").transition().style("fill", DEFAULT_BAR_COLOR);
         });
+
 
 
     var lines_g = bee_svg.selectAll("g.bee_to_queen")
@@ -177,8 +159,8 @@ function updateBeeLayer(backend_results) {
             return beeYScale(d.y) - icon_size/2.0;
         });
 
-    d3.selectAll(".bee_to_queen_g").select("line")
-        .data(updated_bee_data) .transition()
+    d3.selectAll(".bee_line")
+        .data(updated_bee_data).transition()
         .attr("x2", function(d) {
             return beeXScale(d.x);
         })
@@ -294,4 +276,102 @@ function updateBeeDistanceVis() {
         .attr("height", function(d) {
             return height - beeBarYScale(d.distance);
         });
+}
+
+function init_bee_concentration_history_vis() {
+    console.log(BEE_CONCENTRATION_HISTORIES);
+    d3.select("#bee_concentration_history_svg").remove();
+
+    var bee_concentration_history_width = 500;
+    var bee_concentration_history_height = 500;
+
+    margin = {top: 100, right: 100, bottom: 100, left: 100}
+    width = bee_concentration_history_width - margin.left - margin.right // Use the window's width
+    height = bee_concentration_history_height - margin.top - margin.bottom; // Use the window's height
+
+    // Setup data and Get max concentrations
+    concentration_history_data = [];
+    concentrations = [];
+    for (var bee_key in BEE_CONCENTRATION_HISTORIES) {
+        if (bee_key === "queen") {
+            continue;
+        }
+        var concentration = BEE_CONCENTRATION_HISTORIES[bee_key]["concentration_history"];
+        concentration_history_data.push({"bee_key" : bee_key, "concentration" : concentration});
+        for (var j=0; j < concentration.length; j++) {
+            concentrations.push(concentration[j]);
+        }
+    }
+    var max_history_concentration = d3.max(concentrations);
+    var max_timestep = BEE_CONCENTRATION_HISTORIES["worker_1"].length;
+
+    beeConcentrationXScale = d3.scaleLinear()
+        .domain([0, max_timestep]) // input
+        .range([0, width]); // output
+
+    beeConcentrationYScale = d3.scaleLinear()
+        .domain([0, max_history_concentration]) // input
+        .range([height, 0]); // output
+
+    var bee_concentration_history_svg = d3.select("#bee_concentration_history_div").append("svg")
+        .attr("id", "bee_concentration_history_svg")
+        .attr("width", width + margin.left + margin.right)
+        .attr("height", height + margin.top + margin.bottom)
+      .append("g")
+        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+    bee_concentration_history_svg.append("g")
+        .attr("class", "x_axis")
+        .attr("transform", "translate(0," + height + ")")
+        .call(d3.axisBottom(beeConcentrationXScale).ticks(5)); // Create an axis component with d3.axisBottom
+
+    // text label for the x axis
+    bee_concentration_history_svg.append("text")
+        .attr("transform", "translate(" + (width/2) + " ," + (height + margin.top*0.7) + ")")
+        .style("text-anchor", "middle")
+        .text("Timesteps (seconds)");
+
+    bee_concentration_history_svg.append("g")
+        .attr("class", "y_axis")
+        .call(d3.axisLeft(beeConcentrationYScale)); // Create an axis component with d3.axisLeft
+
+    // text label for the y axis
+    bee_concentration_history_svg.append("text")
+        .attr("transform", "rotate(-90)")
+        .attr("y", 0)
+        .attr("x", 0)
+        .attr("dy", "1em")
+        .style("text-anchor", "middle")
+        .text("Average Worker Distance from Queen");
+
+
+    // Plot!
+    // for (var experiment_id in EXPERIMENTS_DATA) {
+    //     plot_experiment_results(experiment_id, max_height)
+    // }
+
+    plot_concentration_history(concentration_history_data);
+}
+
+
+function plot_concentration_history(dataset) {
+
+    console.log("HERE");
+
+    bee_history_line = d3.line()
+        .x(function(d, i) { return beeConcentrationXScale(i); }) // set the x values for the line generator
+        .y(function(d) { return beeConcentrationYScale(d); }) // set the y values for the line generator
+        .curve(d3.curveMonotoneX) // apply smoothing to the line
+
+    var bee_concentration_history_svg = d3.select("#bee_concentration_history_svg");
+
+    for (var i=0; i < dataset.length; i++) {
+
+        var data = dataset[i].concentration;
+        bee_concentration_history_svg.append("path")
+          .data(data)
+          .attr("class", "line")
+          .attr("d", bee_history_line);
+    }
+
 }

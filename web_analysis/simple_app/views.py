@@ -18,22 +18,21 @@ def load_experiment():
     experiment_id = request.json['experiment_id']
     timestep = int(request.json['timestep'])
 
-    print(experiment_id);
-
-    print("timestep: {}".format(timestep))
-
     concentration_map_history_path = "simple_app/static/data/{}/data/concentration_maps/concentration_map_history_{}.h5".format(experiment_id, timestep)
     with h5py.File(concentration_map_history_path, "r") as infile:
         concentration_map_history = np.array(infile["concentration_map_history"])
 
-    bee_concentration_history_path = "simple_app/static/data/{}/data/bee_concentration_history.json".format(experiment_id)
-    with open(bee_concentration_history_path, "r") as infile:
-        bee_concentration_history = json.load(infile)
+    bee_history_path = "simple_app/static/data/{}/data/bee_concentration_history.json".format(experiment_id)
+    with open(bee_history_path, "r") as infile:
+        bee_history = json.load(infile)
 
     bees_position_history = {}
-    for key, val in bee_concentration_history.items():
+    bee_concentration_history = {}
+    for key, val in bee_history.items():
         bee_position = val["position_history"][timestep]
+        bee_concentration = val["concentration_history"]
         bees_position_history[key] = bee_position
+        bee_concentration_history[key] = bee_concentration
 
     concentration_data = []
     for row_i, row in enumerate(concentration_map_history):
@@ -46,7 +45,8 @@ def load_experiment():
 
     results_dict = {
         "concentration_map_history" : concentration_data,
-        "bees_position_history"     : bees_position_history
+        "bees_position_history"     : bees_position_history,
+        "bee_concentration_history" : bee_concentration_history
     }
 
     return jsonify(results_dict)

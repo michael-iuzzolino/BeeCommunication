@@ -128,8 +128,9 @@ class Bee(object):
 
     def sense_environment(self, concentration_map, x_i, y_i):
         # If they already found the queen, do nothing
+        stop_movement = False
         if self.found_queen:
-            self.position_history.append({"x": self.x, "y": self.y})
+            stop_movement = True
             return
 
         # Check if worker will be activated
@@ -139,7 +140,7 @@ class Bee(object):
                 self.found_queen_direction = True
 
         # look for queen
-        if not self.type == "queen":
+        if not self.type == "queen" and not stop_movement:
             self.find_queen(concentration_map, x_i, y_i)
 
         self.update()
