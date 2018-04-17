@@ -14,8 +14,8 @@ var num_timesteps;
 var current_vis_id;
 var max_concentration;
 
-var min_spatial_x = -3;
-var max_spatial_x = 3;
+var min_spatial_x;
+var max_spatial_x;
 var PLAYING = false;
 var PLAY_COLOR = "#ccff99";
 var STOP_COLOR = "#ffffff";
@@ -48,6 +48,7 @@ var bee_bar_graph_height = 300;
 var bee_bar_graph_width = 600;
 var DEFAULT_BAR_COLOR = "#eee6ff";
 var BEE_BAR_SELECT_COLOR = "#ff4da6";
+var BEE_LINE_COLOR = "#5c5cd6";
 
 var BEE_CONCENTRATION_HISTORIES = {};
 var beeConcentrationXScale, beeConcentrationYScale;

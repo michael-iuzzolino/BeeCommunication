@@ -91,7 +91,6 @@
 
 .bee_line {
     stroke-width: 5px;
-    stroke: "#5c5cd6";
 }
 
 #exeriment_selection {
@@ -109,6 +108,10 @@
     top: -40px;
 }
 
-#bee_concentration_history_vis {
+#experiment_visualizations {
 
+}
+
+#bee_concentration_history_vis {
+    margin: 0 auto;
 }

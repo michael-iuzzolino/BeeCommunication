@@ -103,9 +103,14 @@ class Environment(object):
         self.t_array = self.t_array[1:]
 
     def _get_global_position(self, bee_info):
+
+        def find_nearest(array, value):
+            idx = (np.abs(array-value)).argmin()
+            return array[idx]
+
         try:
-            x_i = int(np.where(np.abs(self.X1 - bee_info["x"]) < 1e-5)[0])
-            y_i = int(np.where(np.abs(self.X2 - bee_info["y"]) < 1e-5)[0])
+            x_i = np.where(self.X1 == find_nearest(self.X1, bee_info["x"]))[0][0]
+            y_i = np.where(self.X2 == find_nearest(self.X2, bee_info["y"]))[0][0]
         except:
             print('bee_info["x"]: {}'.format(bee_info["x"]))
             print('bee_info["y"]: {}'.format(bee_info["y"]))
@@ -136,11 +141,12 @@ class Environment(object):
                 self.concentration_map.scatter(x_i, y_i, s=bee_size, color=bee_color)
 
             # Bee annotate
-            self.concentration_map.annotate(bee_name,
-                color=bee_color,
-                xy=(x_i, y_i),
-                xytext=(x_i, y_i)
-            )
+            if len(self.bees) < 14:
+                self.concentration_map.annotate(bee_name,
+                    color=bee_color,
+                    xy=(x_i, y_i),
+                    xytext=(x_i, y_i)
+                )
 
             bee_string = "{}. {:10s}{:5s}{}".format(bee_i+1, bee_name, "", bee_label)
             self.information_plot.text(0.1, bee_i*-0.05+0.9, bee_string, color=bee_color, size=10)

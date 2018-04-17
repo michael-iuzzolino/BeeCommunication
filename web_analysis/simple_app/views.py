@@ -69,6 +69,8 @@ def load_data():
             config_info = json.load(config_infile)
             spatiotemporal_parameters = config_info["spatiotemporal_parameters"]
             delta_t = spatiotemporal_parameters["temporal"]["delta_t"]
+            min_x = spatiotemporal_parameters["spatial"]["min_x"]
+            max_x = spatiotemporal_parameters["spatial"]["max_x"]
 
             diffusion_coefficient = config_info["diffusion_coefficient"]
             queen_bee_concentration = config_info["swarm_parameters"]["queen_bee_concentration"]
@@ -77,7 +79,9 @@ def load_data():
             params = {
                 "diffusion_coefficient"     : diffusion_coefficient,
                 "queen_bee_concentration"   : queen_bee_concentration,
-                "worker_bee_concentration"  : worker_bee_concentration
+                "worker_bee_concentration"  : worker_bee_concentration,
+                "min_x"                     : min_x,
+                "max_x"                     : max_x,
             }
 
         data_path = os.path.join(experiment_path, "data", "distance_to_queen_history.json")
@@ -105,7 +109,7 @@ def load_data():
             "timesteps" : timesteps
         }
 
-    results_dict = {"results" : distance_history}
+    results_dict = {"results" : distance_history, "params" : params}
 
     return jsonify(results_dict)
 

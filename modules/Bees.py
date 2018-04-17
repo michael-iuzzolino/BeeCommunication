@@ -112,7 +112,7 @@ class Bee(object):
             sign = 1 if np.random.uniform() < 0.5 else -1
             steps = np.random.randint(1, 6)
 
-            # Constrain movement to board
+            # Constrain movement to board (self.x and self.y here)
             self.__dict__[direction] += self.delta_x*sign*steps
 
             if self.__dict__[direction] <= self.min_x:
@@ -122,6 +122,15 @@ class Bee(object):
             elif self.__dict__[direction] >= self.max_x:
                 self.__dict__[direction] -= self.delta_x
                 print(self.__dict__[direction])
+
+        # Constrain x and y to bounds of space (self.min_x, self.max_x)
+        # ------------------------------------------------------------
+        for dimension in ["x", "y"]:
+            if self.__dict__[dimension] < self.min_x:
+                self.__dict__[dimension] = self.min_x
+            elif self.__dict__[dimension] > self.max_x:
+                self.__dict__[dimension] = self.max_x
+        # ------------------------------------------------------------
 
         self.position_history.append({"x": self.x, "y": self.y})
 
@@ -135,6 +144,7 @@ class Bee(object):
 
         # Check if worker will be activated
         if not self.pheromone_active:
+
             if concentration_map[x_i, y_i] >= self.activation_threshold:
                 self.activate_pheromones()
                 self.found_queen_direction = True
@@ -218,9 +228,7 @@ class Swarm(object):
         bees = {"queen" : queen_data}
 
         if random_positions:
-            bee_distances = [0.4, 0.55, 0.95, 1.05]
-            sign = lambda : 1 if np.random.uniform() < 0.5 else -1
-            position = lambda : bee_distances[np.random.randint(len(bee_distances))]*sign()
+            position = lambda : np.random.uniform(min_x, max_x)
             new_position = lambda bee_i : (position(), position())
         else:
             def new_position(bee_i):

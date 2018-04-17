@@ -199,6 +199,11 @@ function getExperimentFolders() {
     });
 }
 
+function setParams(params) {
+    min_spatial_x = params["min_x"];
+    max_spatial_x = params["max_x"];
+}
+
 function loadExperimentFolderData() {
     var sendDict = {
         "folder_path" : SELECTED_EXPERIMENT_FOLDER
@@ -212,6 +217,7 @@ function loadExperimentFolderData() {
         data: JSON.stringify(sendDict),
         success: function(python_result){
             EXPERIMENTS_DATA = python_result["results"];
+            setParams(python_result["params"])
             setup_experiment_selection();
             initVisPlot(EXPERIMENTS_DATA["experiment_1"]);
         }

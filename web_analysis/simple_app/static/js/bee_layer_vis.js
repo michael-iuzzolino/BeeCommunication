@@ -1,3 +1,4 @@
+var bee_click_tracker = {};
 
 function initBeeLayer(backend_results) {
     var init_bee_positions = backend_results["bees_position_history"];
@@ -8,6 +9,7 @@ function initBeeLayer(backend_results) {
     var y_values = [];
     for (var bee_key in init_bee_positions) {
         bee_i = init_bee_positions[bee_key];
+
         init_bee_data.push({
             "bee_id"    : bee_key,
             "x"         : bee_i.x,
@@ -16,7 +18,10 @@ function initBeeLayer(backend_results) {
         x_values.push(bee_i.x);
         y_values.push(bee_i.y);
 
-        BEE_DISTANCES[bee_key] = Math.sqrt((bee_i.x)**2 + (bee_i.y)**2)
+        BEE_DISTANCES[bee_key] = Math.sqrt((bee_i.x)**2 + (bee_i.y)**2);
+
+        // Init list of bees
+        bee_click_tracker[bee_key] = false;
     }
 
     // Init bee distance vis
@@ -36,11 +41,11 @@ function initBeeLayer(backend_results) {
         .attr("width", heatmap_size);
 
     beeXScale = d3.scaleLinear()
-        .domain([-3.0, 3.0])
+        .domain([min_spatial_x, max_spatial_x])
         .range([0, heatmap_size]);
 
     beeYScale = d3.scaleLinear()
-        .domain([-3.0, 3.0])
+        .domain([min_spatial_x, max_spatial_x])
         .range([0, heatmap_size]);
 
     bee_svg.selectAll('image.bees')
@@ -69,9 +74,9 @@ function initBeeLayer(backend_results) {
             var icon_size = (d.bee_id.split("_")[0] === "worker") ? worker_bee_icon_size : queen_bee_icon_size;
             return icon_size;
         })
-        .on("click", function(d) {
+        .on("mouseover", function(d) {
             var bee_name_tooltip_div = d3.select("#bee_name_tooltip_div");
-
+            var distance_tooltip_div = d3.select("#distance_tooltip_div");
             bee_name_tooltip_div.transition()
                 .duration(200)
                 .style("opacity", .9);
@@ -82,8 +87,6 @@ function initBeeLayer(backend_results) {
                 .style("left", (d3.event.pageX) + "px")
                 .style("top", (d3.event.pageY - 28) + "px");
 
-
-            var distance_tooltip_div = d3.select("#distance_tooltip_div");
             distance_tooltip_div.transition()
                 .duration(200)
                 .style("opacity", .9);
@@ -94,13 +97,35 @@ function initBeeLayer(backend_results) {
                 })
                 .style("left", (d3.event.pageX) + "px")
                 .style("top", (d3.event.pageY) + "px");
+        })
+        .on("mouseout", function(d) {
+            var bee_name_tooltip_div = d3.select("#bee_name_tooltip_div");
+            var distance_tooltip_div = d3.select("#distance_tooltip_div");
+            bee_name_tooltip_div.transition()
+                .duration(200)
+                .style("opacity", 0.0);
 
-            d3.select("#"+d.bee_id+"_line").transition().style("opacity", 1.0);
-            d3.select("#"+d.bee_id+"_bar").transition().style("fill", BEE_BAR_SELECT_COLOR);
+            distance_tooltip_div.transition()
+                .duration(200)
+                .style("opacity", 0.0);
+        })
+        .on("click", function(d) {
 
+            bee_click_tracker[d.bee_id] = !bee_click_tracker[d.bee_id];
+
+            if (bee_click_tracker[d.bee_id]) {
+
+
+                d3.select("#"+d.bee_id+"_line").transition().style("opacity", 1.0);
+                d3.select("#"+d.bee_id+"_bar").transition().style("fill", BEE_BAR_SELECT_COLOR);
+            }
+            else {
+
+
+                d3.select("#"+d.bee_id+"_line").transition().style("opacity", 0.0);
+                d3.select("#"+d.bee_id+"_bar").transition().style("fill", DEFAULT_BAR_COLOR);
+            }
         });
-
-
 
     var lines_g = bee_svg.selectAll("g.bee_to_queen")
         .data(init_bee_data).enter()
@@ -124,8 +149,7 @@ function initBeeLayer(backend_results) {
         .attr("y2", function(d) {
             return beeYScale(d.y);
         })
-        .style("fill", "black")
-        .style("stroke", "black")
+        .style("stroke", BEE_LINE_COLOR)
         .style("opacity", 0.0);
 }
 
@@ -355,8 +379,6 @@ function init_bee_concentration_history_vis() {
 
 
 function plot_concentration_history(dataset) {
-
-    console.log("HERE");
 
     bee_history_line = d3.line()
         .x(function(d, i) { return beeConcentrationXScale(i); }) // set the x values for the line generator

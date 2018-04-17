@@ -10,10 +10,12 @@ from modules.Environment import Environment
 from modules.Bees import Swarm
 
 RANDOM_SEED = 42
-TESTING = False
-REAL_TIME_VISUALIZATION = False
+TESTING = True
+REAL_TIME_VISUALIZATION = True
 ROTATE_BEES_ON = False
-RANDOM_BEE_POSITIONS = False
+
+NUM_WORKERS = 100
+RANDOM_BEE_POSITIONS = True # If False, reads from bee_positions.txt
 
 CONDITION_COUNTS = {
     "queen" : 2,
@@ -24,11 +26,11 @@ CONDITION_COUNTS = {
 
 SECONDS_TO_RUN = 2
 DELTA_T = 0.05 # 0.05
-DELTA_X = 0.01 # 0.01
-MIN_X = -3
-MAX_X = 3
+DELTA_X = 0.1 # 0.01
+MIN_X = -5
+MAX_X = 5
 
-NUM_WORKERS = 12
+
 DIFFUSION_COEFFICIENT = 0.25
 QUEEN_EMISSION_PERIOD = 5
 WORKER_EMISSION_PERIOD = 2
