@@ -47,9 +47,6 @@ class Bee(object):
 
         # History information
         self.plot_dir = plot_dir
-        self.concentration_history = []
-        self.position_history = []
-
 
     def rotate_bees(self):
         try:
@@ -96,7 +93,7 @@ class Bee(object):
                 # ========================================================================
 
                 # Update position to head in direction of queen
-                steps = np.random.randint(1, 6)
+                steps = np.random.randint(1, 4)
                 self.x += self.directions_to_queen["x"]*self.delta_x*steps
                 self.y += self.directions_to_queen["y"]*self.delta_x*steps
 
@@ -117,11 +114,9 @@ class Bee(object):
 
             if self.__dict__[direction] <= self.min_x:
                 self.__dict__[direction] += self.delta_x
-                print(self.__dict__[direction])
 
             elif self.__dict__[direction] >= self.max_x:
                 self.__dict__[direction] -= self.delta_x
-                print(self.__dict__[direction])
 
         # Constrain x and y to bounds of space (self.min_x, self.max_x)
         # ------------------------------------------------------------
@@ -132,14 +127,9 @@ class Bee(object):
                 self.__dict__[dimension] = self.max_x
         # ------------------------------------------------------------
 
-        self.position_history.append({"x": self.x, "y": self.y})
-
-
     def sense_environment(self, concentration_map, x_i, y_i):
         # If they already found the queen, do nothing
-        stop_movement = False
         if self.found_queen:
-            stop_movement = True
             return
 
         # Check if worker will be activated
@@ -150,7 +140,7 @@ class Bee(object):
                 self.found_queen_direction = True
 
         # look for queen
-        if not self.type == "queen" and not stop_movement:
+        if not self.type == "queen":
             self.find_queen(concentration_map, x_i, y_i)
 
         self.update()
@@ -179,9 +169,6 @@ class Bee(object):
         try:
             # Get the max concentration in the local map
             max_concentration = np.max(local_map[np.where(local_map > current_c)])
-
-            # Append max concentration to history
-            self.concentration_history.append(max_concentration)
 
             # Get the indicies of the max concentration
             max_concentration_indices = list(np.where(local_map == max_concentration))

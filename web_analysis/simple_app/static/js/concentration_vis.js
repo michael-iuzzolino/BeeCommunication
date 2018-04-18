@@ -17,7 +17,6 @@ function initConcentrationVis(backend_results) {
 
     heatmapInstance = h337.create(config);
 
-
     // Find max concentration
     // --------------------------------------------------------
     var data = backend_results["concentration_map_history"];

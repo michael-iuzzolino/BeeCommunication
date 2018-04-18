@@ -18,21 +18,11 @@ def load_experiment():
     experiment_id = request.json['experiment_id']
     timestep = int(request.json['timestep'])
 
-    concentration_map_history_path = "simple_app/static/data/{}/data/concentration_maps/concentration_map_history_{}.h5".format(experiment_id, timestep)
+    # Load concentration history for heatmap
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+    concentration_map_history_path = "{}/{}/data/concentration_maps/concentration_map_history_{}.h5".format(experiment_folder, experiment_id, timestep)
     with h5py.File(concentration_map_history_path, "r") as infile:
         concentration_map_history = np.array(infile["concentration_map_history"])
-
-    bee_history_path = "simple_app/static/data/{}/data/bee_concentration_history.json".format(experiment_id)
-    with open(bee_history_path, "r") as infile:
-        bee_history = json.load(infile)
-
-    bees_position_history = {}
-    bee_concentration_history = {}
-    for key, val in bee_history.items():
-        bee_position = val["position_history"][timestep]
-        bee_concentration = val["concentration_history"]
-        bees_position_history[key] = bee_position
-        bee_concentration_history[key] = bee_concentration
 
     concentration_data = []
     for row_i, row in enumerate(concentration_map_history):
@@ -42,6 +32,28 @@ def load_experiment():
             if col_i % 5 != 0:
                 continue
             concentration_data.append({"x" : col_i, "y" : row_i, "value" : element})
+    # ----------------------------------------------------------------------------------------------------------------------------------------------------------------
+
+    # Load in measurements (bee concentration and position histories)
+    # --------------------------------------------------------------------------------------------
+    measurements_path = "{}/{}/data/measurements.json".format(experiment_folder, experiment_id)
+    with open(measurements_path, "r") as infile:
+        measurements = json.load(infile)
+
+    bees_position_history = {}
+    bee_concentration_history = {}
+    for key, val in measurements.items():
+        if key == "distance_from_queen":
+            continue
+        if key == "position_history":
+            for bee_key, bee_val in val.items():
+                bee_position = bee_val[timestep]
+                bees_position_history[bee_key] = bee_position
+        elif key == "concentration_history":
+            for bee_key, bee_val in val.items():
+                bee_concentration = bee_val
+                bee_concentration_history[bee_key] = bee_concentration
+    # --------------------------------------------------------------------------------------------
 
     results_dict = {
         "concentration_map_history" : concentration_data,
@@ -53,13 +65,12 @@ def load_experiment():
 
 @app.route('/load_data', methods=["GET", "POST"])
 def load_data():
-
+    global experiment_folder
     experiment_folder = request.json["folder_path"]
 
     experiments_list = glob2.glob("{}/*".format(experiment_folder))
 
     distance_history = {}
-
 
     for experiment_i, experiment_path in enumerate(experiments_list):
         experiment_id = experiment_path.split("/")[-1]
@@ -84,7 +95,7 @@ def load_data():
                 "max_x"                     : max_x,
             }
 
-        data_path = os.path.join(experiment_path, "data", "distance_to_queen_history.json")
+        data_path = os.path.join(experiment_path, "data", "measurements.json")
         with open(data_path, "r") as data_infile:
             data = json.load(data_infile)["distance_from_queen"]
 

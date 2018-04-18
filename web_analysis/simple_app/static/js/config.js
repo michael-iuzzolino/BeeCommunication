@@ -21,8 +21,6 @@ var PLAY_COLOR = "#ccff99";
 var STOP_COLOR = "#ffffff";
 var distance_summary_plot_height = 300;
 
-
-
 var heatmap_size = 600;
 
 var beeXScale, beeYScale;

@@ -1,63 +1,75 @@
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
+import time
 import os
 import datetime
 import json
 import numpy as np
+import threading
 
 from modules.Environment import Environment
 from modules.Bees import Swarm
 
 RANDOM_SEED = 42
-TESTING = True
-REAL_TIME_VISUALIZATION = True
-ROTATE_BEES_ON = False
 
-NUM_WORKERS = 100
+TESTING = False
+PLOTTING_ON = False
+REAL_TIME_VISUALIZATION = False
+
+THREADING_ON = True
+NUM_ITERATIONS_PER_EXPERIMENTAL_CONDITION = 1 # Ideally, 10
+
+NUM_WORKERS = 50
 RANDOM_BEE_POSITIONS = True # If False, reads from bee_positions.txt
 
 CONDITION_COUNTS = {
-    "queen" : 2,
-    "worker_concentration" : 2,
-    "worker_threshold" : 2,
-    "diffusion_cefficient" : 2
+    "queen"                 : 1,
+    "worker_concentration"  : 1,
+    "worker_threshold"      : 2,
+    "diffusion_cefficient"  : 2
 }
 
-SECONDS_TO_RUN = 2
+THREADS = []
+SECONDS_TO_RUN = 4
 DELTA_T = 0.05 # 0.05
-DELTA_X = 0.1 # 0.01
-MIN_X = -5
-MAX_X = 5
+DELTA_X = 0.01 # 0.01
+MIN_X = -3
+MAX_X = 3
 
-
-DIFFUSION_COEFFICIENT = 0.25
+ROTATE_BEES_ON = False
+DIFFUSION_COEFFICIENT = 0.15
 QUEEN_EMISSION_PERIOD = 5
 WORKER_EMISSION_PERIOD = 2
 WORKER_BEE_THRESHOLD = 0.5
 DISABLE_PHEROMONE_ON_WORKER_MOVEMENT = True
 
-def make_directories(experiment_dir, experiment_i, num_worker_bees):
+def make_directories(experiment_dir, experiment_i, experiment_iteration, num_worker_bees):
     # Experiment directory
     experiment_dir_path = "{}/experiment_{}".format(experiment_dir, experiment_i)
 
     # data directory
     data_dir_path = "{}/data".format(experiment_dir_path)
 
+    # Concentration maps
     concentration_map_dir_path = "{}/data/concentration_maps".format(experiment_dir_path)
 
+    dir_paths = [experiment_dir_path, data_dir_path, concentration_map_dir_path]
+
     # plots directory
-    plots_dir_path = "{}/plots".format(experiment_dir_path)
+    if PLOTTING_ON:
+        plots_dir_path = "{}/plots".format(experiment_dir_path)
 
-    # environment plots directory
-    env_plots_dir_path = "{}/plots/environment".format(experiment_dir_path)
+        dir_paths.append(plots_dir_path)
 
-    dir_paths = [experiment_dir_path, data_dir_path, plots_dir_path, env_plots_dir_path, concentration_map_dir_path]
+        # environment plots directory
+        env_plots_dir_path = "{}/plots/environment".format(experiment_dir_path)
 
-    # Worker plots
-    for worker_i in range(num_worker_bees):
-        woker_dir_path = "{}/worker_{}".format(plots_dir_path, worker_i+1)
-        dir_paths.append(woker_dir_path)
+        dir_paths.append(env_plots_dir_path)
+
+        # Worker plots
+        for worker_i in range(num_worker_bees):
+            woker_dir_path = "{}/worker_{}".format(plots_dir_path, worker_i+1)
+            dir_paths.append(woker_dir_path)
 
     # Make dirs
     for dir_path in dir_paths:
@@ -66,14 +78,18 @@ def make_directories(experiment_dir, experiment_i, num_worker_bees):
 
     return dir_paths
 
-def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_params, diffusion_coefficient, spatiotemporal_parameters):
+def run_experiment(run_event, experiment_i, experiment_iteration, experiment_dir, queen_bee_params, worker_bee_params, diffusion_coefficient, spatiotemporal_parameters):
     # Make Directories
     # ---------------------------------------------------------------------------
-    dirs = make_directories(experiment_dir, experiment_i, worker_bee_params["number"])
+    dirs = make_directories(experiment_dir, experiment_i, experiment_iteration, worker_bee_params["number"])
     experiment_dir_path = dirs[0]
     data_dir_path = dirs[1]
-    plots_dir_path = dirs[2]
-    env_plots_dir_path = dirs[3]
+    if PLOTTING_ON:
+        plots_dir_path = dirs[3]
+        env_plots_dir_path = dirs[4]
+    else:
+        plots_dir_path = ""
+        env_plots_dir_path = ""
     # ---------------------------------------------------------------------------
 
     swarm_parameters = {
@@ -106,8 +122,8 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
     # ---------------------------------------------------------------------------
     config_save_path = "{}/config.json".format(experiment_dir_path)
     save_params = {
-        "swarm_parameters" : swarm_parameters,
-        "diffusion_coefficient" : diffusion_coefficient,
+        "swarm_parameters"          : swarm_parameters,
+        "diffusion_coefficient"     : diffusion_coefficient,
         "spatiotemporal_parameters" : spatiotemporal_parameters
     }
     with open(config_save_path, "w") as outfile:
@@ -115,10 +131,13 @@ def run_experiment(experiment_i, experiment_dir, queen_bee_params, worker_bee_pa
     # ---------------------------------------------------------------------------
 
     swarm = Swarm(**swarm_parameters)
-    env = Environment(swarm.bees, diffusion_coefficient, spatiotemporal_parameters, plot_params, data_dir_path, REAL_TIME_VISUALIZATION)
-    env.run()
+    env = Environment(swarm.bees, diffusion_coefficient, spatiotemporal_parameters, plot_params, data_dir_path, REAL_TIME_VISUALIZATION, PLOTTING_ON)
+    env.run(run_event)
 
-def main():
+
+
+def main(run_event):
+
     spatiotemporal_parameters = {
         "spatial"   : {
             "min_x"     : MIN_X,
@@ -135,7 +154,7 @@ def main():
     queen_bee_concentrations = np.linspace(0.01, 0.5, CONDITION_COUNTS["queen"])
     worker_bee_concentrations = np.linspace(0.005, 0.5, CONDITION_COUNTS["worker_concentration"])
     diffusion_coefficients = np.linspace(0.05, 0.5, CONDITION_COUNTS["worker_threshold"])
-    worker_bee_thresholds = np.linspace(0, 0.5, CONDITION_COUNTS["diffusion_cefficient"])
+    worker_bee_thresholds = np.linspace(0.01, 0.5, CONDITION_COUNTS["diffusion_cefficient"])
 
     # Create directory for current experiment
     # -----------------------------------------------------------------------------
@@ -160,7 +179,9 @@ def main():
         }
 
         experiment_params = {
+            "run_event"                 : run_event,
             "experiment_i"              : 1,
+            "experiment_iteration"      : 0,
             "experiment_dir"            : experiment_dir,
             "queen_bee_params"          : queen_bee_params,
             "worker_bee_params"         : worker_bee_params,
@@ -169,39 +190,89 @@ def main():
         }
         run_experiment(**experiment_params)
     else:
-        num_experiments = len(queen_bee_concentrations) * len(worker_bee_concentrations) * len(diffusion_coefficients) * len(worker_bee_thresholds)
+        num_experiments = len(queen_bee_concentrations) * len(worker_bee_concentrations) * len(diffusion_coefficients) * len(worker_bee_thresholds) * NUM_ITERATIONS_PER_EXPERIMENTAL_CONDITION
         experiment_i = 0
         for queen_bee_concentration in queen_bee_concentrations:
             for worker_bee_concentration in worker_bee_concentrations:
                 for diffusion_coefficient in diffusion_coefficients:
                     for worker_bee_threshold in worker_bee_thresholds:
-                        print("\n\nExperiment {}/{} --- Queen Concentration: {} -- Worker Concentration: {} -- Diffussion Coefficient: {}".format(experiment_i+1, num_experiments, queen_bee_concentration, worker_bee_concentration, diffusion_coefficient))
-                        queen_bee_params = {
-                            "concentration"     : queen_bee_concentration,
-                            "emission_period"   : QUEEN_EMISSION_PERIOD
-                        }
+                        for experiment_condition_iteration in range(NUM_ITERATIONS_PER_EXPERIMENTAL_CONDITION):
 
-                        worker_bee_params = {
-                            "number"            : NUM_WORKERS,
-                            "concentration"     : worker_bee_concentration,
-                            "threshold"         : worker_bee_threshold,
-                            "emission_period"   : WORKER_EMISSION_PERIOD,
-                            "disable_pheromone" : DISABLE_PHEROMONE_ON_WORKER_MOVEMENT
-                        }
+                            if not run_event.is_set():
+                                return
+                            queen_bee_params = {
+                                "concentration"     : queen_bee_concentration,
+                                "emission_period"   : QUEEN_EMISSION_PERIOD
+                            }
 
-                        experiment_params = {
-                            "experiment_i"              : experiment_i,
-                            "experiment_dir"            : experiment_dir,
-                            "queen_bee_params"          : queen_bee_params,
-                            "worker_bee_params"         : worker_bee_params,
-                            "diffusion_coefficient"     : diffusion_coefficient,
-                            "spatiotemporal_parameters" : spatiotemporal_parameters
-                        }
+                            worker_bee_params = {
+                                "number"            : NUM_WORKERS,
+                                "concentration"     : worker_bee_concentration,
+                                "threshold"         : worker_bee_threshold,
+                                "emission_period"   : WORKER_EMISSION_PERIOD,
+                                "disable_pheromone" : DISABLE_PHEROMONE_ON_WORKER_MOVEMENT
+                            }
 
-                        run_experiment(**experiment_params)
+                            experiment_params = {
+                                "run_event"                 : run_event,
+                                "experiment_i"              : experiment_i,
+                                "experiment_iteration"      : experiment_condition_iteration,
+                                "experiment_dir"            : experiment_dir,
+                                "queen_bee_params"          : queen_bee_params,
+                                "worker_bee_params"         : worker_bee_params,
+                                "diffusion_coefficient"     : diffusion_coefficient,
+                                "spatiotemporal_parameters" : spatiotemporal_parameters
+                            }
+
+                            print_string = "\n\nExperiment {}/{} - iteration {} --- Queen Concentration: {} -- Worker Concentration: {} -- Diffussion Coefficient: {} -- Worker Bee Threshold: {}".format(experiment_i+1, num_experiments, experiment_condition_iteration, queen_bee_concentration, worker_bee_concentration, diffusion_coefficient, worker_bee_threshold)
+
+                            if THREADING_ON:
+                                print("Creating thread for {}".format(print_string))
+                                experiment_thread = threading.Thread(target=run_experiment, kwargs=experiment_params)
+                                THREADS.append(experiment_thread)
+                            else:
+                                print(print_string)
+                                run_experiment(**experiment_params)
 
                         experiment_i += 1
 
+        if THREADING_ON:
+            for thread in THREADS:
+                thread.start()
+
+
+def all_threads_finished():
+    all_finished = True
+    for thread in THREADS:
+        if not thread.isAlive():
+            thread.join()
+            all_finished = False
+    return all_finished
+
+
 if __name__ == '__main__':
     np.random.seed(seed=RANDOM_SEED)
-    main()
+
+    running = threading.Event()
+    running.set()
+
+    main_thread = threading.Thread(target=main, args=(running,))
+    main_thread.start()
+
+    print('HERE')
+
+    try:
+        while True:
+            if all_threads_finished():
+                main_thread.join()
+                break
+            time.sleep(.1)
+    except KeyboardInterrupt:
+        print("Attempting to close threads...")
+        running.clear()
+        for thread in THREADS:
+            thread.join()
+
+        main_thread.join()
+
+        print("Threads successfully closed.")

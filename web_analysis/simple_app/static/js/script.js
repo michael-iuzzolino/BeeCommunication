@@ -219,7 +219,8 @@ function loadExperimentFolderData() {
             EXPERIMENTS_DATA = python_result["results"];
             setParams(python_result["params"])
             setup_experiment_selection();
-            initVisPlot(EXPERIMENTS_DATA["experiment_1"]);
+            var init_experiment = EXPERIMENTS_DATA[Object.keys(EXPERIMENTS_DATA)[0]];
+            initVisPlot(init_experiment);
         }
     });
 }

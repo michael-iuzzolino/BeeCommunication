@@ -1,4 +1,5 @@
 function initVisPlot(experiment_data) {
+    console.log(experiment_data);
 
     d3.select("#vis_div_svg").remove();
 
