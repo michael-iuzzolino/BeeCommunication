@@ -115,6 +115,13 @@
     top: -40px;
 }
 
+#color_form_div{
+    text-align: center;
+    position: absolute;
+    left: 270px;
+    top: -40px;
+}
+
 #experiment_visualizations {
 
 }

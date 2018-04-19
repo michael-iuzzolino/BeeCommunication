@@ -1,18 +1,33 @@
 // Reference: https://www.patrick-wied.at/static/heatmapjs/
 
+
+function updateHeatmapInstance() {
+
+    // Create heatmap instance
+    var new_config = {
+        backgroundColor : SELECTED_COLORMAP.background,
+        gradient        : SELECTED_COLORMAP.gradient
+    };
+
+    heatmapInstance.configure(new_config);
+}
+
 function initConcentrationVis(backend_results) {
 
     d3.selectAll(".heatmap-canvas, #play_button").remove();
 
     num_timesteps = EXPERIMENTS_DATA[current_vis_id].timesteps.length;
 
+
     // Create heatmap instance
     var config = {
-        container: document.getElementById('concentration_div'),
-        radius: 10,
-        maxOpacity: .7,
-        minOpacity: 0,
-        blur: .75
+        container       : document.getElementById('concentration_div'),
+        radius          : 10,
+        maxOpacity      : 0.7,
+        minOpacity      : 0,
+        blur            : 0.75,
+        backgroundColor : SELECTED_COLORMAP.background,
+        gradient        : SELECTED_COLORMAP.gradient
     };
 
     heatmapInstance = h337.create(config);
@@ -72,6 +87,33 @@ function initConcentrationVis(backend_results) {
                 .attr("value", text)
                 .style("background-color", color);
         });
+
+    // Color Selection
+    var color_form = d3.select("#concentration_div")
+        .append("div").attr('id', "color_form_div")
+        .append("form")
+        .attr("id", "color_form");
+
+    var color_select = color_form.append("select")
+        .on("change", function() {
+            var optionSelected = $("option:selected", this);
+            var valueSelected = this.value;
+            SELECTED_COLORMAP_KEY = valueSelected;
+            SELECTED_COLORMAP = COLORMAPS[SELECTED_COLORMAP_KEY]
+            updateHeatmapInstance();
+            updateBeeImages();
+        });
+
+    color_select.selectAll("option")
+        .data(Object.keys(COLORMAPS)).enter()
+        .append("option")
+        .attr("value", function(d) {
+            return d;
+        })
+        .text(function(d) {
+            return d;
+        });
+
 }
 
 

@@ -57,8 +57,8 @@ function initBeeLayer(backend_results) {
             return d.bee_id;
         })
         .attr("xlink:href", function(d) {
-            var worker_path = (d.found_queen_direction) ? active_worker_img_path_2 : worker_img_path_2;
-            return (d.bee_id.split("_")[0] === "worker") ? worker_path : queen_img_path_2;;
+            var worker_path = (d.found_queen_direction) ? SELECTED_COLORMAP.worker_active : SELECTED_COLORMAP.worker
+            return (d.bee_id.split("_")[0] === "worker") ? worker_path : SELECTED_COLORMAP.queen;
         })
         .attr("x", function(d) {
             var icon_size = (d.bee_id.split("_")[0] === "worker") ? worker_bee_icon_size : queen_bee_icon_size;
@@ -178,8 +178,8 @@ function updateBeeLayer(backend_results) {
         .data(updated_bee_data)  // Update with new data
         .transition()  // Transition from old to new
         .attr("xlink:href", function(d) {
-            var worker_path = (d.found_queen_direction) ? active_worker_img_path_2 : worker_img_path_2;
-            return (d.bee_id.split("_")[0] === "worker") ? worker_path : queen_img_path_2;;
+            var worker_path = (d.found_queen_direction) ? SELECTED_COLORMAP.worker_active : SELECTED_COLORMAP.worker
+            return (d.bee_id.split("_")[0] === "worker") ? worker_path : SELECTED_COLORMAP.queen;
         })
         .attr("x", function(d) {
             var icon_size = (d.bee_id.split("_")[0] === "worker") ? worker_bee_icon_size : queen_bee_icon_size;
@@ -197,6 +197,15 @@ function updateBeeLayer(backend_results) {
         })
         .attr("y2", function(d) {
             return beeYScale(d.y);
+        });
+}
+
+function updateBeeImages() {
+    d3.selectAll(".bees")
+        .transition()  // Transition from old to new
+        .attr("xlink:href", function(d) {
+            var worker_path = (d.found_queen_direction) ? SELECTED_COLORMAP.worker_active : SELECTED_COLORMAP.worker
+            return (d.bee_id.split("_")[0] === "worker") ? worker_path : SELECTED_COLORMAP.queen;
         });
 }
 
@@ -264,10 +273,11 @@ function initBeeDistanceVis() {
         .call(d3.axisBottom(beeBarXScale))
         .selectAll("text")
             .style("text-anchor", "end")
-            .attr("dx", "-.8em")
-            .attr("dy", ".15em")
+            .attr("dx", "-.15em")
+            .attr("x", "-1.0em")
+            .attr("dy", "-.5em")
             .attr("transform", function(d) {
-                return "rotate(-45)"
+                return "rotate(-90)"
             });
 
     // add the y Axis
