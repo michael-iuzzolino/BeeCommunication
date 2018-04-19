@@ -88,9 +88,17 @@ function initConcentrationVis(backend_results) {
                 .style("background-color", color);
         });
 
-    // Color Selection
-    var color_form = d3.select("#concentration_div")
-        .append("div").attr('id', "color_form_div")
+    // Setup colormap controls
+    initColorMapControls();
+
+}
+
+function initColorMapControls() {
+
+    var colormap_controls_div = d3.select("body").append("div").attr("id", "colormap_controls_div");
+
+    // Color Map Select
+    var color_form = colormap_controls_div.append("div").attr('id', "color_form_div").append("label").html("Colormap")
         .append("form")
         .attr("id", "color_form");
 
@@ -102,6 +110,7 @@ function initConcentrationVis(backend_results) {
             SELECTED_COLORMAP = COLORMAPS[SELECTED_COLORMAP_KEY]
             updateHeatmapInstance();
             updateBeeImages();
+            updateSliders();
         });
 
     color_select.selectAll("option")
@@ -114,8 +123,76 @@ function initConcentrationVis(backend_results) {
             return d;
         });
 
+    // Gradient options
+    var gradient_options = Object.keys(SELECTED_COLORMAP.gradient);
+
+    var slider_divs = colormap_controls_div.selectAll("div.sliders")
+        .data(gradient_options).enter()
+        .append("div")
+        .attr("class", "sliders")
+        .attr("id", function(i) { return "color_" + i + "_div"; })
+
+    slider_divs.append("label")
+        .attr("for", function(d, i) {
+            return "color_" + i + "_slider";
+        })
+        .attr('id', function(d, i) {
+            return "color_" + i + "_label";
+        })
+        .attr("class", "color_slider_labels")
+        .html(function(d) {
+            return parseInt(parseFloat(d) * 100) + "%";
+        });
+
+    slider_divs.append("input")
+        .attr("type", "range")
+        .attr('id', function(d, i) {
+            return "color_" + i + "_slider";
+        })
+        .attr("class", "color_sliders")
+        .attr('value', function(d) {
+            return parseFloat(d)*100;
+        })
+        .attr("min", 0)
+        .attr("max", 100)
+        .on("input", function(d, i) {
+            // Constrain selected value
+            var gradient_values = Object.keys(SELECTED_COLORMAP.gradient);
+            var this_val = "" + this.value;
+            if (gradient_values.includes(this_val)) {
+                return;
+            }
+            var new_label = parseFloat(+this.value) + "%";
+            d3.select("#color_" + i +"_label").html(new_label);
+            updateColorMapGradient(this.id, +this.value);
+            updateHeatmapInstance();
+        });
 }
 
+function updateSliders() {
+    var gradient_options = Object.keys(SELECTED_COLORMAP.gradient);
+    d3.selectAll(".color_sliders")
+    .attr('value', function(d, i) {
+        return parseFloat(gradient_options[i]) * 100;
+    });
+
+    d3.selectAll(".color_slider_labels")
+    .html(function(d, i) {
+        return parseInt(parseFloat(gradient_options[i]) * 100) + "%";
+    });
+
+}
+
+function updateColorMapGradient(id, new_key_raw) {
+
+    var index = id.split("_")[1];
+    var old_key = Object.keys(SELECTED_COLORMAP.gradient)[index];
+    var old_val = Object.values(SELECTED_COLORMAP.gradient)[index];
+
+    var new_key = "" + new_key_raw / 100;
+    delete SELECTED_COLORMAP.gradient[old_key];
+    SELECTED_COLORMAP.gradient[new_key] = old_val;
+}
 
 
 function updateConcentrationVis(concentration_results) {
