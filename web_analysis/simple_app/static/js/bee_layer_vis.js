@@ -11,9 +11,10 @@ function initBeeLayer(backend_results) {
         bee_i = init_bee_positions[bee_key];
 
         init_bee_data.push({
-            "bee_id"    : bee_key,
-            "x"         : bee_i.x,
-            "y"         : bee_i.y,
+            "bee_id"                : bee_key,
+            "x"                     : bee_i.x,
+            "y"                     : bee_i.y,
+            "found_queen_direction" : bee_i.found_queen_direction
         });
         x_values.push(bee_i.x);
         y_values.push(bee_i.y);
@@ -55,8 +56,9 @@ function initBeeLayer(backend_results) {
         .attr("id", function(d) {
             return d.bee_id;
         })
-        .attr('xlink:href', function(d) {
-            return (d.bee_id.split("_")[0] === "worker") ? worker_img_path_1 : queen_img_path_1;
+        .attr("xlink:href", function(d) {
+            var worker_path = (d.found_queen_direction) ? active_worker_img_path_2 : worker_img_path_2;
+            return (d.bee_id.split("_")[0] === "worker") ? worker_path : queen_img_path_2;;
         })
         .attr("x", function(d) {
             var icon_size = (d.bee_id.split("_")[0] === "worker") ? worker_bee_icon_size : queen_bee_icon_size;
@@ -160,9 +162,10 @@ function updateBeeLayer(backend_results) {
     for (var bee_key in updated_bee_positions) {
         bee_i = updated_bee_positions[bee_key];
         updated_bee_data.push({
-            "bee_id"    : bee_key,
-            "x"         : bee_i.x,
-            "y"         : bee_i.y,
+            "bee_id"                : bee_key,
+            "x"                     : bee_i.x,
+            "y"                     : bee_i.y,
+            "found_queen_direction" : bee_i.found_queen_direction
         });
 
         BEE_DISTANCES[bee_key] = Math.sqrt((bee_i.x)**2 + (bee_i.y)**2)
@@ -174,6 +177,10 @@ function updateBeeLayer(backend_results) {
     d3.selectAll(".bees")
         .data(updated_bee_data)  // Update with new data
         .transition()  // Transition from old to new
+        .attr("xlink:href", function(d) {
+            var worker_path = (d.found_queen_direction) ? active_worker_img_path_2 : worker_img_path_2;
+            return (d.bee_id.split("_")[0] === "worker") ? worker_path : queen_img_path_2;;
+        })
         .attr("x", function(d) {
             var icon_size = (d.bee_id.split("_")[0] === "worker") ? worker_bee_icon_size : queen_bee_icon_size;
             return beeXScale(d.x) - icon_size/2.0;
@@ -334,7 +341,7 @@ function init_bee_concentration_history_vis() {
         .range([0, width]); // output
 
     beeConcentrationYScale = d3.scaleLinear()
-        .domain([0, max_history_concentration]) // input
+        .domain([0, max_history_concentration*1.2]) // input
         .range([height, 0]); // output
 
     var bee_concentration_history_svg = d3.select("#bee_concentration_history_div").append("svg")

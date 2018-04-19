@@ -33,9 +33,11 @@ var mouseover_line_color = "#0000ff";
 var worker_bee_icon_size = 25;
 var queen_bee_icon_size = 55;
 var queen_img_path_1 = 'https://d30y9cdsu7xlg0.cloudfront.net/png/348444-200.png';
-var queen_img_path_2 = "simple_app/static/icons/queen_bee.png";
+var queen_img_path_2 = "static/icons/queen_bee.png";
 var worker_img_path_1 = 'https://cdn0.iconfinder.com/data/icons/thin-nature/24/thin-0807_bees_honey-512.png';
-var worker_img_path_2 = "simple_app/static/icons/worker_bee.png";
+var worker_img_path_2 = "static/icons/worker_bee.png";
+var active_worker_img_path_2 = "static/icons/worker_bee_active.png";
+
 
 var bee_ids = [];
 

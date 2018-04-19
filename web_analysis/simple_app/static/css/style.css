@@ -14,18 +14,26 @@
 
 
 .option_text {
-    margin-left: 25px;
-    word-spacing: 65px;
+    margin-left: 15px;
+    word-spacing: 40px;
 }
 
 #form_div {
     text-align: center;
 }
 
-#experiment_selection_header {
+.experiment_selection_header {
     font-size: 8px;
+}
+
+#experiment_selection_header_1 {
     margin: 0px;
-    margin-left: 5px;
+    word-spacing: 45px;
+}
+
+#experiment_selection_header_2 {
+    margin: 0px;
+    word-spacing: 25px;
 }
 
 #bee_svg {

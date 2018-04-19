@@ -23,23 +23,28 @@ NUM_WORKERS = 50
 RANDOM_BEE_POSITIONS = True # If False, reads from bee_positions.txt
 
 CONDITION_COUNTS = {
-    "queen"                 : 1,
-    "worker_concentration"  : 1,
+    "queen"                 : 2,
+    "worker_concentration"  : 2,
     "worker_threshold"      : 2,
     "diffusion_cefficient"  : 2
 }
 
+queen_bee_concentrations = np.linspace(0.01, 0.5, CONDITION_COUNTS["queen"])
+worker_bee_concentrations = np.linspace(0.005, 0.5, CONDITION_COUNTS["worker_concentration"])
+diffusion_coefficients = np.linspace(0.05, 0.5, CONDITION_COUNTS["worker_threshold"])
+worker_bee_thresholds = np.linspace(0.001, 0.005, CONDITION_COUNTS["diffusion_cefficient"])
+
 THREADS = []
-SECONDS_TO_RUN = 4
+SECONDS_TO_RUN = 8
 DELTA_T = 0.05 # 0.05
 DELTA_X = 0.01 # 0.01
 MIN_X = -3
 MAX_X = 3
 
 ROTATE_BEES_ON = False
-DIFFUSION_COEFFICIENT = 0.15
-QUEEN_EMISSION_PERIOD = 5
-WORKER_EMISSION_PERIOD = 2
+DIFFUSION_COEFFICIENT = 0.15 # Used for TESTING
+QUEEN_EMISSION_PERIOD = 6
+WORKER_EMISSION_PERIOD = 4
 WORKER_BEE_THRESHOLD = 0.5
 DISABLE_PHEROMONE_ON_WORKER_MOVEMENT = True
 
@@ -151,10 +156,7 @@ def main(run_event):
         }
     }
 
-    queen_bee_concentrations = np.linspace(0.01, 0.5, CONDITION_COUNTS["queen"])
-    worker_bee_concentrations = np.linspace(0.005, 0.5, CONDITION_COUNTS["worker_concentration"])
-    diffusion_coefficients = np.linspace(0.05, 0.5, CONDITION_COUNTS["worker_threshold"])
-    worker_bee_thresholds = np.linspace(0.01, 0.5, CONDITION_COUNTS["diffusion_cefficient"])
+
 
     # Create directory for current experiment
     # -----------------------------------------------------------------------------

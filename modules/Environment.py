@@ -114,12 +114,16 @@ class Environment(Plotter):
         return environment_concentration_map
 
     def log_measurement(self, bee_type, measurement):
+        print(measurement)
+        position_data = {"x" : measurement["x"], "y" : measurement["y"], "found_queen_direction" : found_queen_direction}
+        concentration_data = measurement["concentration"]
+
         if bee_type in self.measurements["concentration_history"]:
-            self.measurements["concentration_history"][bee_type].append(measurement["concentration"])
-            self.measurements["position_history"][bee_type].append({"x" : measurement["x"], "y" : measurement["y"]})
+            self.measurements["concentration_history"][bee_type].append(concentration_data)
+            self.measurements["position_history"][bee_type].append(position_data)
         else:
-            self.measurements["concentration_history"][bee_type] = [measurement["concentration"]]
-            self.measurements["position_history"][bee_type] = [{"x" : measurement["x"], "y" : measurement["y"]}]
+            self.measurements["concentration_history"][bee_type] = [concentration_data]
+            self.measurements["position_history"][bee_type] = [position_data]
 
     def run(self, run_event):
         pheromone_emission_sources = []

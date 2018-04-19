@@ -147,7 +147,8 @@ function setup_experiment_selection() {
             var diffusion_coefficient = params.diffusion_coefficient;
             var queen_bee_concentration = params.queen_bee_concentration;
             var worker_bee_concentration = params.worker_bee_concentration;
-            return diffusion_coefficient.toFixed(2) + " " + queen_bee_concentration.toFixed(2) + " " + worker_bee_concentration.toFixed(3);
+            var worker_bee_threshold = params.worker_bee_threshold;
+            return diffusion_coefficient.toFixed(2) + " " + queen_bee_concentration.toFixed(2) + " " + worker_bee_concentration.toFixed(3) + " " + worker_bee_threshold.toFixed(3);
         })
         .on("mouseover", function(d) {
             var this_id = "experiment_"+this.value;

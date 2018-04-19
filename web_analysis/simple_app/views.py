@@ -78,6 +78,7 @@ def load_data():
         config_path = os.path.join(experiment_path, "config.json")
         with open(config_path, "r") as config_infile:
             config_info = json.load(config_infile)
+            
             spatiotemporal_parameters = config_info["spatiotemporal_parameters"]
             delta_t = spatiotemporal_parameters["temporal"]["delta_t"]
             min_x = spatiotemporal_parameters["spatial"]["min_x"]
@@ -86,11 +87,12 @@ def load_data():
             diffusion_coefficient = config_info["diffusion_coefficient"]
             queen_bee_concentration = config_info["swarm_parameters"]["queen_bee_concentration"]
             worker_bee_concentration = config_info["swarm_parameters"]["worker_bee_concentration"]
-
+            worker_bee_threshold = config_info["swarm_parameters"]["worker_bee_threshold"]
             params = {
                 "diffusion_coefficient"     : diffusion_coefficient,
                 "queen_bee_concentration"   : queen_bee_concentration,
                 "worker_bee_concentration"  : worker_bee_concentration,
+                "worker_bee_threshold"      : worker_bee_threshold,
                 "min_x"                     : min_x,
                 "max_x"                     : max_x,
             }
