@@ -13,8 +13,8 @@ from modules.config import *
 import modules.utils as utils
 
 def init_factors():
-    # Setup factors
-    # --------------------------------------------------------------------------------------------
+    # Setup parameters for model
+
     global queen_bee_concentrations
     queen_bee_concentrations = np.linspace(0.01, 0.5, CONDITION_COUNTS["queen"])
 
@@ -26,11 +26,14 @@ def init_factors():
 
     global worker_bee_thresholds
     worker_bee_thresholds = np.linspace(0.001, 0.005, CONDITION_COUNTS["diffusion_coefficient"])
-    # --------------------------------------------------------------------------------------------
+
+
+##################################################################################################
 
 def run_experiment(run_event, experiment_i, experiment_iteration, experiment_dir, queen_bee_params, worker_bee_params, diffusion_coefficient, spatiotemporal_parameters):
-    # Make Directories
-    # ---------------------------------------------------------------------------
+
+    # Make directories
+
     dirs = utils.make_directories(experiment_dir, experiment_i, experiment_iteration, worker_bee_params["number"])
     experiment_dir_path = dirs[0]
     data_dir_path = dirs[1]
@@ -40,7 +43,10 @@ def run_experiment(run_event, experiment_i, experiment_iteration, experiment_dir
     else:
         plots_dir_path = ""
         env_plots_dir_path = ""
+
     # ---------------------------------------------------------------------------
+
+    # Set up swarm & plot parameters
 
     swarm_parameters = {
         "queen_bee_concentration"   : queen_bee_params["concentration"],
@@ -68,8 +74,10 @@ def run_experiment(run_event, experiment_i, experiment_iteration, experiment_dir
         "save_dir"          : env_plots_dir_path
     }
 
-    # Save parameters
     # ---------------------------------------------------------------------------
+
+    # Save parameters
+
     config_save_path = "{}/config.json".format(experiment_dir_path)
     save_params = {
         "swarm_parameters"          : swarm_parameters,
@@ -78,11 +86,17 @@ def run_experiment(run_event, experiment_i, experiment_iteration, experiment_dir
     }
     with open(config_save_path, "w") as outfile:
         json.dump(save_params, outfile)
+
     # ---------------------------------------------------------------------------
+
+    # Pass in dict of swam parameters (**kwargs) into Swarm module
+    # Pass in environment parameters
 
     swarm = Swarm(**swarm_parameters)
     env = Environment(swarm.bees, diffusion_coefficient, spatiotemporal_parameters, plot_params, data_dir_path, REAL_TIME_VISUALIZATION, PLOTTING_ON)
     env.run(run_event)
+
+##################################################################################################
 
 def main(run_event):
 
@@ -99,14 +113,18 @@ def main(run_event):
         }
     }
 
-
-    # Create directory for current experiment
     # -----------------------------------------------------------------------------
+
+    # Directory for current experiment
+
     experiment_timestamp = datetime.datetime.now().strftime("%mM_%dD-%HH_%MM_%SS")
     experiment_dir = "experiments/{}".format(experiment_timestamp)
     if not os.path.exists(experiment_dir):
         os.mkdir(experiment_dir)
+
     # -----------------------------------------------------------------------------
+
+    # Testing conditions: 1 set of parameters
 
     if TESTING:
         queen_bee_params = {
@@ -132,9 +150,15 @@ def main(run_event):
             "diffusion_coefficient"     : DIFFUSION_COEFFICIENT,
             "spatiotemporal_parameters" : spatiotemporal_parameters
         }
-        run_experiment(**experiment_params)
+        run_experiment(**experiment_params)     # pass in dict of parameters
+
+    # Non-test: give parameters from config.py & here
+
     else:
+        # Number of experiments as product of different parameters' sets
         num_experiments = len(queen_bee_concentrations) * len(worker_bee_concentrations) * len(diffusion_coefficients) * len(worker_bee_thresholds) * NUM_ITERATIONS_PER_EXPERIMENTAL_CONDITION
+
+        # Create dicts of different parameters by looping through each combo
         experiment_i = 0
         for queen_bee_concentration in queen_bee_concentrations:
             for worker_bee_concentration in worker_bee_concentrations:
@@ -183,6 +207,8 @@ def main(run_event):
         if THREADING_ON:
             for thread in THREADS:
                 thread.start()
+
+##################################################################################################
 
 if __name__ == '__main__':
     np.random.seed(seed=RANDOM_SEED)

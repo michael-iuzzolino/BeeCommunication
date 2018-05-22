@@ -1,17 +1,20 @@
+# Imports
 import warnings
 warnings.simplefilter(action='ignore', category=FutureWarning)
-
 import numpy as np
 import scipy
 from scipy import ndimage
 from skimage.transform import rotate
-
 import matplotlib.pyplot as plt
+
+################################### CLASS: BEES #######################################
 
 class Bee(object):
     def __init__(self, bee_type, init_position, pheromone_concentration, activation_threshold, movement, activity, bias, delta_t, delta_x, min_x, max_x, emission_period, queen_movement_params, plot_dir, rotate_bees_ON=False):
-        self.type = bee_type
-        self.rotate_bees_ON = rotate_bees_ON
+        # Class constructor method
+
+        self.type = bee_type                            # Queen or worker
+        self.rotate_bees_ON = rotate_bees_ON            # Rotating images not working yet... False for now
 
         self.img = ndimage.imread('imgs/queen_bee.png') if bee_type == "queen" else ndimage.imread('imgs/worker_bee.png')
         self.current_heading = 90
@@ -33,9 +36,10 @@ class Bee(object):
         self.wait_threshold = int(np.random.normal(10, 1)) # wait X timesteps after finding the queen before moving
         self.num_timesteps_waited = 0
 
-        # Bias is directed pheromone emission
+        # Bias is directed pheromone emission for workers
         self.bias_x, self.bias_y = bias
 
+        # Emission period
         self.emission_period = emission_period
         self.pheromone_emission_timestep = 1
 
@@ -48,12 +52,21 @@ class Bee(object):
         # History information
         self.plot_dir = plot_dir
 
+### ------------------------------------------------------- ###
+
     def rotate_bees(self):
+
+        # This method rotates the bees towards the queen's direction as they
+        # detetct & go uphill the pheromone gradients
+
         try:
+            # Calculate the direction bee needs to turn from its current
+            # dir to head to queen
             degree_to_queen = np.arctan2(self.bias_y, self.bias_x) * 180 / np.pi
 
             degree_difference = self.current_heading + degree_to_queen
 
+            # Why make it negative?
             degree_difference *= -1
 
             if self.type == "worker_6":
@@ -70,6 +83,8 @@ class Bee(object):
 
         except Exception as e:
             print(e)
+
+### ------------------------------------------------------- ###
 
     def update(self):
 
@@ -127,6 +142,8 @@ class Bee(object):
                 self.__dict__[dimension] = self.max_x
         # ------------------------------------------------------------
 
+### ------------------------------------------------------- ###
+
     def sense_environment(self, concentration_map, x_i, y_i):
         # If they already found the queen, do nothing
         if self.found_queen:
@@ -145,22 +162,30 @@ class Bee(object):
 
         self.update()
 
+### ------------------------------------------------------- ###
+
     def measure(self):
         emitting = True if self.pheromone_emission_timestep % self.emission_period == 1 else False
 
         bee_info = {
-            "x"             : self.x,
-            "y"             : self.y,
-            "bias_x"        : self.bias_x,
-            "bias_y"        : self.bias_y,
-            "concentration" : self.concentration,
-            "emitting"      : emitting
+            "x"                     : self.x,
+            "y"                     : self.y,
+            "bias_x"                : self.bias_x,
+            "bias_y"                : self.bias_y,
+            "concentration"         : self.concentration,
+            "emitting"              : emitting,
+            "found_queen_direction" : self.found_queen_direction,
+            "type"                  : self.type
         }
         return bee_info
+
+### ------------------------------------------------------- ###
 
     def activate_pheromones(self):
         self.pheromone_active = True
         self.random_movement_active = False
+
+### ------------------------------------------------------- ###
 
     def find_queen(self, concentration_map, x_i, y_i):
         current_c = concentration_map[x_i, y_i]
@@ -193,6 +218,8 @@ class Bee(object):
         except ValueError:
             self.found_queen = True
             self.queen_directed_movement = False
+
+################################### CLASS: SWARM #######################################
 
 class Swarm(object):
     def __init__(self, num_workers, queen_bee_concentration, worker_bee_concentration, worker_bee_threshold, delta_t, delta_x, min_x, max_x, emission_periods, queen_movement_params, worker_plot_dir, rotate_bees_ON, random_positions):
