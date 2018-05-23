@@ -1,3 +1,6 @@
+import os
+from modules.config import *
+
 def make_directories(experiment_dir, experiment_i, experiment_iteration, num_worker_bees):
     # Experiment directory
     experiment_dir_path = "{}/experiment_{}".format(experiment_dir, experiment_i)

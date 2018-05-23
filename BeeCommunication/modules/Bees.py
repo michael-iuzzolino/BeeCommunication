@@ -156,7 +156,7 @@ class Bee(object):
                 self.activate_pheromones()
                 self.found_queen_direction = True
 
-        # look for queen
+        # Look for queen
         if not self.type == "queen":
             self.find_queen(concentration_map, x_i, y_i)
 

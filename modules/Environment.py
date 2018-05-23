@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib.colors import ListedColormap
 
+# DM
+from modules.Bees import Bee
+
 from modules.Bees import Swarm
 from modules.Plotting import Plotter
 
@@ -32,7 +35,8 @@ class Environment(Plotter):
         self.measurements = {
             "distance_from_queen"   : [],
             "concentration_history" : {},
-            "position_history"      : {}
+            "position_history"      : {},
+            "distance_from_others"  : []    # DM added
         }
 
         self.concentration_map_history = []
@@ -94,6 +98,35 @@ class Environment(Plotter):
 
         self.bee_distance_df = pd.DataFrame({"bees" : bee_names, "bee_distances" : bee_distances})
 
+    # DM's adds
+    def _get_distances_to_others(self, bee_positions):
+        for bee_pos in bee_positions:
+            if bee_positions[bee_pos] != "queen":
+                worker_bee = bee_positions[bee_pos]
+                worker_x = worker_bee["x"]
+                worker_y = worker_bee["y"]
+
+                worker_names = []
+                worker_distances = []
+                for bee, pos in bee_positions.items():
+                    if bee == worker_bee:
+                        continue
+
+                    other_worker_x = pos["x"]
+                    other_worker_y = pos["y"]
+                    distance_to_other = np.sqrt((worker_x - other_worker_x)**2 + (worker_y - other_worker_y)**2)
+
+                    worker_names.append(bee.replace("_", "").capitalize())
+                    worker_distances.append(distance_to_other)
+
+                # Save measurement
+                worker_measurement_data = {"distances": worker_distances, "average": np.mean(worker_distances)}
+                self.worker_measurements["distance_from_others"].append(worker_measurement_data)
+
+                self.worker_distance_df = pd.DataFrame({"workers": worker_names, "worker_distances": worker_distances})
+    # End DM's adds
+
+
     def _update_concentration_map(self, pheromone_emission_sources, current_timestep):
 
         # Instantiate concentration map as all 0's for current timestep
@@ -115,7 +148,15 @@ class Environment(Plotter):
 
     def log_measurement(self, bee_type, measurement):
         print(measurement)
-        position_data = {"x" : measurement["x"], "y" : measurement["y"], "found_queen_direction" : found_queen_direction}
+        # position_data = {"x" : measurement["x"], "y" : measurement["y"], "found_queen_direction" : found_queen_direction}
+
+        # DM added
+        position_data = {
+            "x"                     : measurement["x"],
+            "y"                     : measurement["y"],
+            "found_queen_direction" : measurement["found_queen_direction"]
+        }
+
         concentration_data = measurement["concentration"]
 
         if bee_type in self.measurements["concentration_history"]:
