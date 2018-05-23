@@ -69,11 +69,12 @@ class Bee(object):
             # Why make it negative?
             degree_difference *= -1
 
-            if self.type == "worker_6":
-                print("degree_to_queen: {}".format(degree_to_queen))
-                print("self.current_heading: {}".format(self.current_heading))
-                print("degree_difference: {}".format(degree_difference))
-                raw_input("")
+            # DM commented out this test code
+            # if self.type == "worker_6":
+            #     print("degree_to_queen: {}".format(degree_to_queen))
+            #     print("self.current_heading: {}".format(self.current_heading))
+            #     print("degree_difference: {}".format(degree_difference))
+            #     raw_input("")
 
             # Rotate the image
             self.img = rotate(self.img, degree_to_queen)

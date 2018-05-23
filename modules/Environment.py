@@ -239,7 +239,7 @@ class Environment(Plotter):
         # Save data
         # ------------------------------------------------------------
         self._save_measurement_data()
-        self._save_concentration_map()
+        # self._save_concentration_map()
         # ------------------------------------------------------------
 
         if self.plotting_on:
@@ -249,12 +249,12 @@ class Environment(Plotter):
         with open("{}/measurements.json".format(self.data_dir_path), "w") as outfile:
             json.dump(self.measurements, outfile)
 
-        # # DM's adds
+        # DM's adds
         # with open("{}/distance_to_others_history.json".format(self.data_dir_path), "w") as outfile:
         #     json.dump(self.worker_measurements, outfile)
-        # #
 
-    def _save_concentration_map(self):
-        for map_i, map in enumerate(self.concentration_map_history):
-            with h5py.File("{}/concentration_maps/concentration_map_history_{}.h5".format(self.data_dir_path, map_i), "w") as outfile:
-                outfile.create_dataset("concentration_map_history", data=map)
+    # DM commented out these maps - do not need for now
+    # def _save_concentration_map(self):
+    #     for map_i, map in enumerate(self.concentration_map_history):
+    #         with h5py.File("{}/concentration_maps/concentration_map_history_{}.h5".format(self.data_dir_path, map_i), "w") as outfile:
+    #             outfile.create_dataset("concentration_map_history", data=map)

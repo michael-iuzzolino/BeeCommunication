@@ -30,11 +30,11 @@ def init_factors():
 
 ##################################################################################################
 
-def run_experiment(run_event, experiment_i, experiment_iteration, experiment_dir, queen_bee_params, worker_bee_params, diffusion_coefficient, spatiotemporal_parameters):
+def run_experiment(run_event, experiment_i, Q, W, D, T, experiment_iteration, experiment_dir, queen_bee_params, worker_bee_params, diffusion_coefficient, spatiotemporal_parameters):
 
     # Make directories
 
-    dirs = utils.make_directories(experiment_dir, experiment_i, experiment_iteration, worker_bee_params["number"])
+    dirs = utils.make_directories(experiment_dir, experiment_i, Q, W, D, T, experiment_iteration, worker_bee_params["number"])
     experiment_dir_path = dirs[0]
     data_dir_path = dirs[1]
     if PLOTTING_ON:
@@ -160,10 +160,22 @@ def main(run_event):
 
         # Create dicts of different parameters by looping through each combo
         experiment_i = 0
+
+        # DM added variables for labeling experiments with parameters
+        Q = 0
+        W = 0
+        D = 0
+        T = 0
+        # End DM's adds
+
         for queen_bee_concentration in queen_bee_concentrations:
+            Q = queen_bee_concentration           # DM
             for worker_bee_concentration in worker_bee_concentrations:
+                W = worker_bee_concentration      # DM
                 for diffusion_coefficient in diffusion_coefficients:
+                    D = diffusion_coefficient     # DM
                     for worker_bee_threshold in worker_bee_thresholds:
+                        T = worker_bee_threshold  # DM
                         for experiment_condition_iteration in range(NUM_ITERATIONS_PER_EXPERIMENTAL_CONDITION):
 
                             if not run_event.is_set():
@@ -184,6 +196,10 @@ def main(run_event):
                             experiment_params = {
                                 "run_event"                 : run_event,
                                 "experiment_i"              : experiment_i,
+                                "Q"                         : Q,
+                                "W"                         : W,
+                                "D"                         : D,
+                                "T"                         : T,
                                 "experiment_iteration"      : experiment_condition_iteration,
                                 "experiment_dir"            : experiment_dir,
                                 "queen_bee_params"          : queen_bee_params,
