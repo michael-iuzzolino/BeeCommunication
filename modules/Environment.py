@@ -151,7 +151,8 @@ class Environment(Plotter):
         return environment_concentration_map
 
     def log_measurement(self, bee_type, measurement):
-        print(measurement)
+        # DM commented out
+        # print(measurement)
         # position_data = {"x" : measurement["x"], "y" : measurement["y"], "found_queen_direction" : found_queen_direction}
 
         # DM added

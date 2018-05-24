@@ -11,7 +11,7 @@ NUM_WORKERS = 50
 RANDOM_BEE_POSITIONS = True # If False, reads from bee_positions.txt
 
 CONDITION_COUNTS = {
-    "queen"                     : 1,
+    "queen"                     : 2,
     "worker_concentration"      : 1,
     "worker_threshold"          : 1,
     "diffusion_coefficient"     : 1
