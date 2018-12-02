@@ -9,6 +9,9 @@ import matplotlib.pyplot as plt
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from matplotlib.colors import ListedColormap
 
+# DM
+from modules.Bees import Bee
+
 from modules.Bees import Swarm
 from modules.Plotting import Plotter
 
@@ -32,8 +35,13 @@ class Environment(Plotter):
         self.measurements = {
             "distance_from_queen"   : [],
             "concentration_history" : {},
-            "position_history"      : {}
+            "position_history"      : {},
+            "distance_from_others"  : []    # DM added
         }
+
+        # DM's adds
+        self.worker_measurements = {"distance_from_others": []}
+        # End DM's adds
 
         self.concentration_map_history = []
 
@@ -94,6 +102,35 @@ class Environment(Plotter):
 
         self.bee_distance_df = pd.DataFrame({"bees" : bee_names, "bee_distances" : bee_distances})
 
+    # DM's adds
+    def _get_distances_to_other_bees(self, bee_positions):
+        for bee_pos in bee_positions:
+            if bee_positions[bee_pos] != "queen":
+                worker_bee = bee_positions[bee_pos]
+                worker_x = worker_bee["x"]
+                worker_y = worker_bee["y"]
+
+                worker_names = []
+                worker_distances = []
+                for bee, pos in bee_positions.items():
+                    if bee == worker_bee:
+                        continue
+
+                    other_worker_x = pos["x"]
+                    other_worker_y = pos["y"]
+                    distance_to_other = np.sqrt((worker_x - other_worker_x)**2 + (worker_y - other_worker_y)**2)
+
+                    worker_names.append(bee.replace("_", "").capitalize())
+                    worker_distances.append(distance_to_other)
+
+                # Save measurement
+                worker_measurement_data = {"distances": worker_distances, "average": np.median(worker_distances)}
+                #self.worker_measurements["distance_from_others"].append(worker_measurement_data)
+                self.measurements["distance_from_others"].append(worker_measurement_data)
+
+                self.worker_distance_df = pd.DataFrame({"workers": worker_names, "worker_distances": worker_distances})
+    # End DM's adds
+
     def _update_concentration_map(self, pheromone_emission_sources, current_timestep):
 
         # Instantiate concentration map as all 0's for current timestep
@@ -114,8 +151,17 @@ class Environment(Plotter):
         return environment_concentration_map
 
     def log_measurement(self, bee_type, measurement):
-        print(measurement)
-        position_data = {"x" : measurement["x"], "y" : measurement["y"], "found_queen_direction" : found_queen_direction}
+        # DM commented out
+        # print(measurement)
+        # position_data = {"x" : measurement["x"], "y" : measurement["y"], "found_queen_direction" : found_queen_direction}
+
+        # DM added
+        position_data = {
+            "x"                     : measurement["x"],
+            "y"                     : measurement["y"],
+            "found_queen_direction" : measurement["found_queen_direction"]
+        }
+
         concentration_data = measurement["concentration"]
 
         if bee_type in self.measurements["concentration_history"]:
@@ -176,6 +222,10 @@ class Environment(Plotter):
             # Calculate distances to queen
             self._get_distances_to_queen(global_bee_positions)
 
+            # DM's adds
+            self._get_distances_to_other_bees(global_bee_positions)
+            # End DM's adds
+
             # Plot the environment
             self.concentration_map_history.append(environment_concentration_map.tolist())
             if self.plotting_on:
@@ -190,7 +240,7 @@ class Environment(Plotter):
         # Save data
         # ------------------------------------------------------------
         self._save_measurement_data()
-        self._save_concentration_map()
+        # self._save_concentration_map()
         # ------------------------------------------------------------
 
         if self.plotting_on:
@@ -200,7 +250,12 @@ class Environment(Plotter):
         with open("{}/measurements.json".format(self.data_dir_path), "w") as outfile:
             json.dump(self.measurements, outfile)
 
-    def _save_concentration_map(self):
-        for map_i, map in enumerate(self.concentration_map_history):
-            with h5py.File("{}/concentration_maps/concentration_map_history_{}.h5".format(self.data_dir_path, map_i), "w") as outfile:
-                outfile.create_dataset("concentration_map_history", data=map)
+        # DM's adds
+        # with open("{}/distance_to_others_history.json".format(self.data_dir_path), "w") as outfile:
+        #     json.dump(self.worker_measurements, outfile)
+
+    # DM commented out these maps - do not need for now
+    # def _save_concentration_map(self):
+    #     for map_i, map in enumerate(self.concentration_map_history):
+    #         with h5py.File("{}/concentration_maps/concentration_map_history_{}.h5".format(self.data_dir_path, map_i), "w") as outfile:
+    #             outfile.create_dataset("concentration_map_history", data=map)

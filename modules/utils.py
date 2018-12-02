@@ -1,11 +1,14 @@
-def make_directories(experiment_dir, experiment_i, experiment_iteration, num_worker_bees):
+import os
+from modules.config import *
+
+def make_directories(experiment_dir, experiment_i, Q, W, D, T, experiment_iteration, num_worker_bees):
     # Experiment directory
-    experiment_dir_path = "{}/experiment_{}".format(experiment_dir, experiment_i)
+    experiment_dir_path = "{}/experiment{}_Q{}_W{}_D{}_T{}".format(experiment_dir, experiment_i, Q, W, D, T,)
 
     # data directory
     data_dir_path = "{}/data".format(experiment_dir_path)
 
-    # Concentration maps
+    # Concentration maps - DM commented out
     concentration_map_dir_path = "{}/data/concentration_maps".format(experiment_dir_path)
 
     dir_paths = [experiment_dir_path, data_dir_path, concentration_map_dir_path]
